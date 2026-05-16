@@ -25,6 +25,14 @@ If the user does not have `NOTION_API_TOKEN`, tell them to create a Notion inter
 
 Do not assume the token can access every database. Notion only allows the integration to access pages/databases explicitly shared with it.
 
+## About `ntn` Login
+
+The official Notion CLI (`ntn`) can authenticate the local machine with `ntn login`, but a remote MCP bridge still needs the MCP client to send a Notion token in `X-Notion-Token`.
+
+Do not assume `ntn login` is enough for remote MCP client setup. For remote Codex or Claude Code clients, prefer `NOTION_API_TOKEN` from a Notion internal integration.
+
+Use `ntn` auth only when the MCP server runs locally on the same machine and the server implementation can read `ntn` credentials.
+
 ## Codex: No-Clone Install
 
 Set tokens in the shell that starts Codex:

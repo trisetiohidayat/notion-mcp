@@ -26,6 +26,17 @@ Use a Notion internal integration token when the client needs to send `NOTION_AP
 
 The token only works for pages/databases that are shared with the integration. If the MCP tool returns a Notion permission or object-not-found error, check that the integration has access to the database.
 
+## About `ntn` Login
+
+The official Notion CLI (`ntn`) can authenticate a local machine with `ntn login`. That is useful for local Notion CLI workflows and for local MCP servers that know how to read `ntn` auth.
+
+For a remote MCP bridge, prefer `NOTION_API_TOKEN` instead. Codex or Claude Code must send a Notion token to the remote server in the `X-Notion-Token` header, and `ntn login` does not automatically provide that header to remote MCP clients.
+
+Use this rule of thumb:
+
+- Local MCP server on the same machine as `ntn login`: `ntn` auth can be useful.
+- Remote MCP server over HTTPS: use `NOTION_API_TOKEN` from an internal integration.
+
 ## Codex: Remote HTTP Server
 
 Use this when Codex connects directly to the remote MCP server.
