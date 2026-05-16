@@ -14,6 +14,17 @@ Ask or infer these values:
 
 Do not ask the user to paste secrets into repo files. Prefer shell environment variables or client-native secret handling.
 
+## Notion Token Source
+
+If the user does not have `NOTION_API_TOKEN`, tell them to create a Notion internal integration:
+
+1. Open <https://www.notion.so/my-integrations>.
+2. Create a new internal integration.
+3. Copy the integration secret and set it as `NOTION_API_TOKEN`.
+4. Share or connect the target Notion database/page with that integration.
+
+Do not assume the token can access every database. Notion only allows the integration to access pages/databases explicitly shared with it.
+
 ## Codex: No-Clone Install
 
 Set tokens in the shell that starts Codex:

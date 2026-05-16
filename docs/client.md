@@ -14,6 +14,18 @@ Ask the server owner for:
 
 Do not put real tokens in shared config files. Prefer environment variables when the client supports them.
 
+## Getting a Notion Token
+
+Use a Notion internal integration token when the client needs to send `NOTION_API_TOKEN`.
+
+1. Open <https://www.notion.so/my-integrations>.
+2. Create a new internal integration.
+3. Copy the integration secret and use it as `NOTION_API_TOKEN`.
+4. Open the target Notion database/page.
+5. Share or connect that page/database with the integration.
+
+The token only works for pages/databases that are shared with the integration. If the MCP tool returns a Notion permission or object-not-found error, check that the integration has access to the database.
+
 ## Codex: Remote HTTP Server
 
 Use this when Codex connects directly to the remote MCP server.
