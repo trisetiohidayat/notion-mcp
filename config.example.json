@@ -1,0 +1,22 @@
+{
+  "aliases": {
+    "example_tasks": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  },
+  "data_sources": {
+    "example_tasks": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "name": "Example Tasks",
+      "description": "Example task database",
+      "key_property": "No",
+      "title_property": "Task",
+      "status_property": "Status"
+    },
+    "example_customers": {
+      "id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+      "name": "Example Customers",
+      "description": "Example customer master database",
+      "key_property": "Customer Code",
+      "title_property": "Name"
+    }
+  }
+}

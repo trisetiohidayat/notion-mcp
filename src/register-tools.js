@@ -1,0 +1,153 @@
+import { z } from 'zod';
+import { getDataSourceKeyProperty, getDataSourceStatusProperty, listDataSources, loadConfig, resolveDataSourceId } from './config.js';
+import { retrieveDataSource, updatePage } from './notion.js';
+import { buildProperties, schemaProperties, summarizePage } from './properties.js';
+import {
+  notion_db_get_by_property,
+  notion_db_query,
+  notion_db_update_by_property,
+} from './tools.js';
+
+const jsonObject = z.record(z.string(), z.any());
+
+function textResult(value) {
+  return {
+    content: [{ type: 'text', text: JSON.stringify(value, null, 2) }],
+    structuredContent: value,
+  };
+}
+
+function resolveAlias(aliasOrId) {
+  return resolveDataSourceId(aliasOrId, loadConfig());
+}
+
+export function registerNotionDbTools(server) {
+  server.registerTool('notion_source_list', {
+    description: 'List configured Notion data source aliases with metadata such as id, name, description, key_property, title_property, and status_property.',
+    inputSchema: {},
+  }, async () => textResult({ sources: listDataSources(loadConfig()) }));
+
+  server.registerTool('notion_source_schema', {
+    description: 'Fetch schema for a configured source alias or raw data_source_id.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+    },
+  }, async ({ source }) => {
+    const schema = await retrieveDataSource(resolveAlias(source));
+    const properties = Object.entries(schemaProperties(schema)).map(([name, property]) => ({ name, type: property.type }));
+    return textResult({ source, data_source_id: schema.id, properties });
+  });
+
+  server.registerTool('notion_source_get_by_key', {
+    description: 'Get exactly one row from a configured source using its configured key_property, or an override key_property.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      key_value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact key value to match'),
+      key_property: z.string().optional().describe('Override key property; defaults to source key_property'),
+    },
+  }, async ({ source, key_value, key_property }) => {
+    const property = key_property || getDataSourceKeyProperty(source, loadConfig());
+    if (!property) throw new Error(`No key_property configured for source: ${source}`);
+    const page = await notion_db_get_by_property(resolveAlias(source), property, key_value);
+    return textResult({ ...summarizePage(page), properties: page.properties });
+  });
+
+  server.registerTool('notion_source_update_by_key', {
+    description: 'Update exactly one row from a configured source using its configured key_property, or an override key_property. Blocks not found and duplicate matches.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      key_value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact key value to match'),
+      properties: jsonObject.describe('Plain property values to update'),
+      key_property: z.string().optional().describe('Override key property; defaults to source key_property'),
+    },
+  }, async ({ source, key_value, properties, key_property }) => {
+    const property = key_property || getDataSourceKeyProperty(source, loadConfig());
+    if (!property) throw new Error(`No key_property configured for source: ${source}`);
+    const page = await notion_db_update_by_property(resolveAlias(source), property, key_value, properties);
+    return textResult({ updated: true, ...summarizePage(page) });
+  });
+
+  server.registerTool('notion_source_update_status_by_key', {
+    description: 'Update one status/select property on exactly one row from a configured source using key_property and status_property metadata.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      key_value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact key value to match'),
+      status_value: z.string().describe('Status/select option name'),
+      key_property: z.string().optional().describe('Override key property; defaults to source key_property'),
+      status_property: z.string().optional().describe('Override status property; defaults to source status_property'),
+    },
+  }, async ({ source, key_value, status_value, key_property, status_property }) => {
+    const keyProperty = key_property || getDataSourceKeyProperty(source, loadConfig());
+    const statusProperty = status_property || getDataSourceStatusProperty(source, loadConfig());
+    if (!keyProperty) throw new Error(`No key_property configured for source: ${source}`);
+    if (!statusProperty) throw new Error(`No status_property configured for source: ${source}`);
+    const page = await notion_db_update_by_property(resolveAlias(source), keyProperty, key_value, { [statusProperty]: status_value });
+    return textResult({ updated: true, ...summarizePage(page) });
+  });
+
+  server.registerTool('notion_db_schema', {
+    description: 'Fetch Notion data source schema and list property names/types. Accepts alias or raw data_source_id.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+    },
+  }, async ({ data_source_id }) => {
+    const schema = await retrieveDataSource(resolveAlias(data_source_id));
+    const properties = Object.entries(schemaProperties(schema)).map(([name, property]) => ({ name, type: property.type }));
+    return textResult({ data_source_id: schema.id, properties });
+  });
+
+  server.registerTool('notion_db_query', {
+    description: 'Query a Notion data source using an explicit Notion API filter object. This is property-filter based, not semantic search.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      filters: jsonObject.describe('Notion API filter object'),
+      sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
+    },
+  }, async ({ data_source_id, filters, sorts }) => {
+    const pages = await notion_db_query(resolveAlias(data_source_id), filters, sorts);
+    return textResult({ count: pages.length, pages: pages.map(summarizePage) });
+  });
+
+  server.registerTool('notion_db_get_by_property', {
+    description: 'Get exactly one row/page from a Notion data source by exact property match. Errors on not found or duplicate match.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      property_name: z.string().describe('Property name to match exactly'),
+      value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
+    },
+  }, async ({ data_source_id, property_name, value }) => {
+    const page = await notion_db_get_by_property(resolveAlias(data_source_id), property_name, value);
+    return textResult({ ...summarizePage(page), properties: page.properties });
+  });
+
+  server.registerTool('notion_db_update_page', {
+    description: 'Update a Notion page by page_id. Properties are plain values converted using data source schema when data_source_id is provided, or raw Notion properties otherwise.',
+    inputSchema: {
+      page_id: z.string().describe('Notion page ID to update'),
+      properties: jsonObject.describe('Plain property values when data_source_id is provided, otherwise raw Notion page properties'),
+      data_source_id: z.string().optional().describe('Optional data source ID or alias used to convert plain property values'),
+    },
+  }, async ({ page_id, properties, data_source_id }) => {
+    let notionProperties = properties;
+    if (data_source_id) {
+      const schema = await retrieveDataSource(resolveAlias(data_source_id));
+      notionProperties = buildProperties(properties, schema);
+    }
+    const page = await updatePage(page_id, notionProperties);
+    return textResult({ updated: true, ...summarizePage(page) });
+  });
+
+  server.registerTool('notion_db_update_by_property', {
+    description: 'Find exactly one row by exact property match, then update that page_id. Blocks not found and duplicate matches.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      match_property: z.string().describe('Property name to match exactly'),
+      match_value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
+      properties: jsonObject.describe('Plain property values to update, converted using data source schema'),
+    },
+  }, async ({ data_source_id, match_property, match_value, properties }) => {
+    const page = await notion_db_update_by_property(resolveAlias(data_source_id), match_property, match_value, properties);
+    return textResult({ updated: true, ...summarizePage(page) });
+  });
+
+}

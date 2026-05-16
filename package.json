@@ -1,0 +1,22 @@
+{
+  "name": "notion-db-mcp-helper",
+  "version": "0.1.0",
+  "description": "Precise Notion data source query/update helper CLI, designed to be MCP-wrappable.",
+  "type": "module",
+  "bin": {
+    "db": "./bin/db.js",
+    "notion-db-mcp": "./bin/notion-db-mcp.js",
+    "notion-db-mcp-http": "./bin/notion-db-mcp-http.js"
+  },
+  "scripts": {
+    "check": "node --check bin/db.js && node --check bin/notion-db-mcp.js && node --check bin/notion-db-mcp-http.js && node --check src/*.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "express": "^5.2.1"
+  }
+}
