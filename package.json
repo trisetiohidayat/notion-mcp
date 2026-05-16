@@ -4,12 +4,14 @@
   "description": "Precise Notion data source query/update helper CLI, designed to be MCP-wrappable.",
   "type": "module",
   "bin": {
+    "notion-mcp": "./bin/notion-mcp.js",
+    "notion-db-mcp-helper": "./bin/notion-mcp.js",
     "db": "./bin/db.js",
     "notion-db-mcp": "./bin/notion-db-mcp.js",
     "notion-db-mcp-http": "./bin/notion-db-mcp-http.js"
   },
   "scripts": {
-    "check": "node --check bin/db.js && node --check bin/notion-db-mcp.js && node --check bin/notion-db-mcp-http.js && node --check src/*.js"
+    "check": "node --check bin/db.js && node --check bin/notion-mcp.js && node --check bin/notion-db-mcp.js && node --check bin/notion-db-mcp-http.js && node --check src/*.js"
   },
   "engines": {
     "node": ">=18"

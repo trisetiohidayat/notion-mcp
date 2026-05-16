@@ -37,6 +37,46 @@ Use this rule of thumb:
 - Local MCP server on the same machine as `ntn login`: `ntn` auth can be useful.
 - Remote MCP server over HTTPS: use `NOTION_API_TOKEN` from an internal integration.
 
+## Codex: Local All-In-One via `npx`
+
+Use this when you want Codex to start the MCP server locally. This does not require a remote HTTPS server.
+
+```bash
+codex mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+Provide Notion auth on the same machine before starting Codex:
+
+```bash
+export NOTION_API_TOKEN='<notion-token>'
+codex
+```
+
+If the local MCP server supports reading `ntn` credentials and `ntn login` has already been completed on the same machine, `NOTION_API_TOKEN` may not be needed.
+
+For private GitHub repositories, make sure `npm`/`git` can access the repository from this machine.
+
+## Claude Code: Local All-In-One via `npx`
+
+Use this when you want Claude Code to start the MCP server locally.
+
+```bash
+claude mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+Provide Notion auth on the same machine before starting Claude Code:
+
+```bash
+export NOTION_API_TOKEN='<notion-token>'
+claude
+```
+
+If the local MCP server supports reading `ntn` credentials and `ntn login` has already been completed on the same machine, `NOTION_API_TOKEN` may not be needed.
+
 ## Codex: Remote HTTP Server
 
 Use this when Codex connects directly to the remote MCP server.

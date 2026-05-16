@@ -8,6 +8,7 @@ This project provides:
 - A stdio MCP server for local MCP clients.
 - A Streamable HTTP MCP server for remote MCP clients.
 - Generic source metadata so one installation can manage many Notion databases/tables.
+- A local all-in-one `npx` setup where MCP clients can start the server directly.
 
 ## Why
 
@@ -58,6 +59,24 @@ export NOTION_API_TOKEN='<your-notion-token>'
 ./bin/db.js get example_tasks No 38
 ./bin/db.js update example_tasks No 38 Status Done
 ./bin/db.js update-props example_tasks No 38 Summary="Done: verified"
+```
+
+## Local MCP via `npx`
+
+Codex can start the stdio MCP server directly without cloning this repository manually:
+
+```bash
+codex mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+Claude Code can use the same local server command:
+
+```bash
+claude mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
 ```
 
 ## Auth Model
