@@ -1,22 +1,62 @@
 # MCP Client Installation
 
-This guide configures MCP clients to use a published Notion DB MCP server. You do not need to clone this repository when you only want to connect to a remote MCP endpoint.
+This guide configures MCP clients for Notion DB MCP. The recommended setup is local stdio via `npx`, where the MCP client starts the MCP server on the same machine.
 
 For AI-agent-oriented installation instructions, see [`ai-install-client.md`](ai-install-client.md).
 
-## Required Values
+## Recommended: Local All-In-One via `npx`
 
-Ask the server owner for:
+Use this when Codex or Claude Code runs on the same machine that should access Notion. This does not require a VPS, HTTPS endpoint, or MCP bridge token.
 
-- `MCP_SERVER_URL`: remote MCP URL, for example `https://mcp.example.com/mcp`
-- `NOTION_DB_MCP_TOKEN`: bearer token that protects the MCP bridge
-- `NOTION_API_TOKEN`: Notion token used by the client, if the server is configured in client-token/dual-header mode
+Codex:
 
-Do not put real tokens in shared config files. Prefer environment variables when the client supports them.
+```bash
+codex mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+Claude Code:
+
+```bash
+claude mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+The MCP client will run this command as a local stdio MCP server when it starts.
+
+## Local Notion Auth
+
+For local all-in-one setup, authenticate Notion on the same machine and OS user that runs Codex or Claude Code.
+
+Preferred local options:
+
+1. Use official Notion CLI auth if available:
+
+   ```bash
+   ntn login
+   ```
+
+2. Or set an explicit Notion token:
+
+   ```bash
+   export NOTION_API_TOKEN='<notion-token>'
+   ```
+
+The server checks auth in this order:
+
+1. `NOTION_TOKEN`
+2. `NOTION_API_TOKEN`
+3. `NOTION_API_KEY`
+4. `NOTION_ACCESS_TOKEN`
+5. `ntn` file-based auth
+
+If `ntn login` succeeds but the MCP tool returns `Missing Notion token`, set `NOTION_API_TOKEN` as a fallback.
 
 ## Getting a Notion Token
 
-Use a Notion internal integration token when the client needs to send `NOTION_API_TOKEN`.
+Use a Notion internal integration token when you choose explicit token auth.
 
 1. Open <https://www.notion.so/my-integrations>.
 2. Create a new internal integration.
@@ -28,58 +68,16 @@ The token only works for pages/databases that are shared with the integration. I
 
 ## About `ntn` Login
 
-The official Notion CLI (`ntn`) can authenticate a local machine with `ntn login`. That is useful for local Notion CLI workflows and for local MCP servers that know how to read `ntn` auth.
-
-For a remote MCP bridge, prefer `NOTION_API_TOKEN` instead. Codex or Claude Code must send a Notion token to the remote server in the `X-Notion-Token` header, and `ntn login` does not automatically provide that header to remote MCP clients.
+The official Notion CLI (`ntn`) authenticates local tooling. It does not generate/export a reusable token for remote MCP clients.
 
 Use this rule of thumb:
 
 - Local MCP server on the same machine as `ntn login`: `ntn` auth can be useful.
-- Remote MCP server over HTTPS: use `NOTION_API_TOKEN` from an internal integration.
+- Remote MCP server over HTTPS: use `NOTION_API_TOKEN` from an internal integration, or make the remote server hold its own Notion auth.
 
-## Codex: Local All-In-One via `npx`
+## Alternative: Remote HTTP Server for Codex
 
-Use this when you want Codex to start the MCP server locally. This does not require a remote HTTPS server.
-
-```bash
-codex mcp add notion_db -- \
-  npx --yes --package github:trisetiohidayat/notion-mcp \
-  notion-mcp serve
-```
-
-Provide Notion auth on the same machine before starting Codex:
-
-```bash
-export NOTION_API_TOKEN='<notion-token>'
-codex
-```
-
-If the local MCP server supports reading `ntn` credentials and `ntn login` has already been completed on the same machine, `NOTION_API_TOKEN` may not be needed.
-
-For private GitHub repositories, make sure `npm`/`git` can access the repository from this machine.
-
-## Claude Code: Local All-In-One via `npx`
-
-Use this when you want Claude Code to start the MCP server locally.
-
-```bash
-claude mcp add notion_db -- \
-  npx --yes --package github:trisetiohidayat/notion-mcp \
-  notion-mcp serve
-```
-
-Provide Notion auth on the same machine before starting Claude Code:
-
-```bash
-export NOTION_API_TOKEN='<notion-token>'
-claude
-```
-
-If the local MCP server supports reading `ntn` credentials and `ntn login` has already been completed on the same machine, `NOTION_API_TOKEN` may not be needed.
-
-## Codex: Remote HTTP Server
-
-Use this when Codex connects directly to the remote MCP server.
+Use this when Codex connects to an already-running MCP server over HTTPS.
 
 Set tokens in the shell that starts Codex:
 
@@ -96,7 +94,7 @@ codex mcp add notion_db \
   --bearer-token-env-var NOTION_DB_MCP_TOKEN
 ```
 
-If the server expects the caller's Notion token in `X-Notion-Token`, add this to `~/.codex/config.toml`:
+If the remote server expects the caller's Notion token in `X-Notion-Token`, add this to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.notion_db.env_http_headers]
@@ -110,9 +108,9 @@ codex mcp list
 codex mcp get notion_db
 ```
 
-## Claude Code: Remote HTTP Server
+## Alternative: Remote HTTP Server for Claude Code
 
-Use this when Claude Code connects directly to the remote MCP server.
+Use this when Claude Code connects to an already-running MCP server over HTTPS.
 
 If the server already holds Notion auth, pass only the MCP bridge bearer token:
 
@@ -144,23 +142,14 @@ Inside Claude Code, run:
 /mcp
 ```
 
-Claude Code also supports JSON config with environment variable expansion. Use this form if you do not want literal token values in the `claude mcp add` command:
+## Optional: Pin a GitHub Commit
 
-```json
-{
-  "type": "http",
-  "url": "${MCP_SERVER_URL}",
-  "headers": {
-    "Authorization": "Bearer ${NOTION_DB_MCP_TOKEN}",
-    "X-Notion-Token": "${NOTION_API_TOKEN}"
-  }
-}
-```
-
-Add it with:
+Pin the GitHub package when you want reproducible local `npx` installs:
 
 ```bash
-claude mcp add-json notion_db '{"type":"http","url":"${MCP_SERVER_URL}","headers":{"Authorization":"Bearer ${NOTION_DB_MCP_TOKEN}","X-Notion-Token":"${NOTION_API_TOKEN}"}}'
+codex mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp#<commit-sha> \
+  notion-mcp serve
 ```
 
 ## Optional: Codex Installer Script
@@ -174,7 +163,7 @@ NOTION_MCP_SERVER_URL="https://mcp.example.com/mcp" \
 
 The script stores only environment variable names, not token values.
 
-## Codex: Local stdio Server
+## Development: Local stdio Server from Checkout
 
 Use this only when the server project is installed on the same machine as Codex:
 
@@ -188,13 +177,6 @@ Recommended config:
 [mcp_servers.notion_db_precise]
 command = "/path/to/notion-db-mcp/bin/notion-db-mcp.js"
 cwd = "/path/to/notion-db-mcp"
-```
-
-Provide Notion auth locally:
-
-```bash
-export NOTION_API_TOKEN='<your-notion-token>'
-codex
 ```
 
 ## SSH Tunnel Alternative
