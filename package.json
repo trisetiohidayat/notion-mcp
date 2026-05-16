@@ -11,7 +11,7 @@
     "notion-db-mcp-http": "./bin/notion-db-mcp-http.js"
   },
   "scripts": {
-    "check": "node --check bin/db.js && node --check bin/notion-mcp.js && node --check bin/notion-db-mcp.js && node --check bin/notion-db-mcp-http.js && node --check src/*.js"
+    "check": "node --check bin/db.js && node --check bin/notion-mcp.js && node --check bin/notion-db-mcp.js && node --check bin/notion-db-mcp-http.js && node --check src/*.js && node --check scripts/verify-mcp-tools.js && node scripts/verify-mcp-tools.js"
   },
   "engines": {
     "node": ">=18"
