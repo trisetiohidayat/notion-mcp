@@ -77,6 +77,13 @@ export function retrieveDataSource(dataSourceId) {
   return notionRequest(`/data_sources/${encodeURIComponent(dataSourceId)}`);
 }
 
+export function updateDataSource(dataSourceId, body) {
+  return notionRequest(`/data_sources/${encodeURIComponent(dataSourceId)}`, {
+    method: 'PATCH',
+    body,
+  });
+}
+
 export function retrieveDatabase(databaseId) {
   return notionRequest(`/databases/${encodeURIComponent(databaseId)}`);
 }

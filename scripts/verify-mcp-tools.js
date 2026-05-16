@@ -13,6 +13,10 @@ registerNotionDbTools({
 const requiredTools = [
   'notion_source_list',
   'notion_source_schema',
+  'notion_source_update_schema',
+  'notion_source_add_property',
+  'notion_source_rename_property',
+  'notion_source_remove_property',
   'notion_source_get_by_key',
   'notion_source_query',
   'notion_source_table',
@@ -23,6 +27,10 @@ const requiredTools = [
   'notion_source_update_by_key',
   'notion_source_update_status_by_key',
   'notion_db_schema',
+  'notion_db_update_schema',
+  'notion_db_add_property',
+  'notion_db_rename_property',
+  'notion_db_remove_property',
   'notion_db_query',
   'notion_db_table',
   'notion_db_count',
@@ -133,4 +141,34 @@ if (originalToken === undefined) {
   process.env.NOTION_API_TOKEN = originalToken;
 }
 
-console.log(`Verified ${registeredTools.length} MCP tools, scalar property conversion, and query result limiting.`);
+const schemaUpdateFetch = globalThis.fetch;
+const originalTokenForSchema = process.env.NOTION_API_TOKEN;
+process.env.NOTION_API_TOKEN = 'secret_test';
+let schemaPatchBody;
+globalThis.fetch = async (_url, options) => {
+  schemaPatchBody = JSON.parse(options.body);
+  return {
+    ok: true,
+    async text() {
+      return JSON.stringify({
+        id: 'ds1',
+        properties: {
+          No: { type: 'unique_id', unique_id: { prefix: null } },
+        },
+      });
+    },
+  };
+};
+
+const addUniqueIdTool = registeredTools.find((tool) => tool.name === 'notion_db_add_property');
+await addUniqueIdTool.handler({ data_source_id: 'ds1', name: 'No', type: 'unique_id' });
+assert.deepEqual(schemaPatchBody, { properties: { No: { unique_id: { prefix: null } } } });
+
+globalThis.fetch = schemaUpdateFetch;
+if (originalTokenForSchema === undefined) {
+  delete process.env.NOTION_API_TOKEN;
+} else {
+  process.env.NOTION_API_TOKEN = originalTokenForSchema;
+}
+
+console.log(`Verified ${registeredTools.length} MCP tools, scalar conversion, query limits, and schema updates.`);

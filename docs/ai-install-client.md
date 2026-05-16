@@ -129,6 +129,10 @@ Expected tools:
 
 - `notion_source_list`
 - `notion_source_schema`
+- `notion_source_update_schema`
+- `notion_source_add_property`
+- `notion_source_rename_property`
+- `notion_source_remove_property`
 - `notion_source_get_by_key`
 - `notion_source_query`
 - `notion_source_table`
@@ -139,6 +143,10 @@ Expected tools:
 - `notion_source_update_by_key`
 - `notion_source_update_status_by_key`
 - `notion_db_schema`
+- `notion_db_update_schema`
+- `notion_db_add_property`
+- `notion_db_rename_property`
+- `notion_db_remove_property`
 - `notion_db_query`
 - `notion_db_table`
 - `notion_db_count`
@@ -156,6 +164,20 @@ and count tools instead of writing local scripts:
 - `notion_source_table` for selected columns
 - `notion_source_count` for filtered counts
 - `notion_source_group_count` for counts by status/select/person/etc.
+
+For schema changes, prefer source-level schema tools. Example: add a number-only
+Notion ID/Unique ID property with `notion_source_add_property`:
+
+```json
+{
+  "source": "task_list",
+  "name": "No",
+  "type": "unique_id"
+}
+```
+
+Only remove schema properties when the user explicitly confirms the destructive
+change; `notion_source_remove_property` requires `confirm: true`.
 
 ## Troubleshooting
 

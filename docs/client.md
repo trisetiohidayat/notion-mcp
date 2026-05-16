@@ -161,6 +161,10 @@ After restart, the MCP client should see these tools:
 
 - `notion_source_list`
 - `notion_source_schema`
+- `notion_source_update_schema`
+- `notion_source_add_property`
+- `notion_source_rename_property`
+- `notion_source_remove_property`
 - `notion_source_get_by_key`
 - `notion_source_query`
 - `notion_source_table`
@@ -171,6 +175,10 @@ After restart, the MCP client should see these tools:
 - `notion_source_update_by_key`
 - `notion_source_update_status_by_key`
 - `notion_db_schema`
+- `notion_db_update_schema`
+- `notion_db_add_property`
+- `notion_db_rename_property`
+- `notion_db_remove_property`
 - `notion_db_query`
 - `notion_db_table`
 - `notion_db_count`
@@ -185,6 +193,17 @@ Prefer `notion_source_table`, `notion_source_query_by_property`,
 `notion_source_count`, and `notion_source_group_count` for reporting-style
 answers. They return simple property values instead of raw Notion property
 objects.
+
+Use `notion_source_add_property` for schema changes such as adding a Notion
+ID/Unique ID property:
+
+```json
+{
+  "source": "task_list",
+  "name": "No",
+  "type": "unique_id"
+}
+```
 
 ## Troubleshooting
 

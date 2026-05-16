@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getDataSourceKeyProperty, getDataSourceStatusProperty, listDataSources, loadConfig, resolveDataSourceId } from './config.js';
-import { retrieveDataSource, updatePage } from './notion.js';
+import { retrieveDataSource, updateDataSource, updatePage } from './notion.js';
 import { buildExactFilter, buildProperties, getPropertySchema, summarizePage, summarizeSchemaProperties } from './properties.js';
 import {
   notion_db_count,
@@ -14,6 +14,24 @@ import {
 const jsonObject = z.record(z.string(), z.any());
 const pageSize = z.number().int().min(1).max(100).optional().describe('Optional Notion API page size, 1-100');
 const maxResults = z.number().int().min(1).max(1000).optional().describe('Optional maximum rows to return, 1-1000');
+const propertyType = z.enum([
+  'rich_text',
+  'number',
+  'select',
+  'multi_select',
+  'status',
+  'date',
+  'people',
+  'files',
+  'checkbox',
+  'url',
+  'email',
+  'phone_number',
+  'formula',
+  'relation',
+  'rollup',
+  'unique_id',
+]);
 
 function textResult(value) {
   return {
@@ -41,6 +59,61 @@ export function registerNotionDbTools(server) {
     const schema = await retrieveDataSource(resolveAlias(source));
     const properties = summarizeSchemaProperties(schema);
     return textResult({ source, data_source_id: schema.id, properties });
+  });
+
+  server.registerTool('notion_source_update_schema', {
+    description: 'Patch a configured source schema by passing a raw Notion data source properties object. Can add, rename, update, or remove properties.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      properties: jsonObject.describe('Raw Notion data source properties patch object. Set a property to null to remove it.'),
+    },
+  }, async ({ source, properties }) => {
+    const schema = await updateDataSource(resolveAlias(source), { properties });
+    return textResult({ updated: true, source, data_source_id: schema.id, properties: summarizeSchemaProperties(schema) });
+  });
+
+  server.registerTool('notion_source_add_property', {
+    description: 'Add a property to a configured source schema. For Notion unique_id / ID, use type=unique_id and omit prefix or set prefix=null for number-only IDs.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      name: z.string().describe('New property name'),
+      type: propertyType.describe('Notion property type to create'),
+      config: jsonObject.optional().describe('Optional Notion property type config, for example { "prefix": null } for unique_id or { "options": [...] } for select/status.'),
+    },
+  }, async ({ source, name, type, config }) => {
+    const schema = await updateDataSource(resolveAlias(source), {
+      properties: { [name]: buildSchemaProperty(type, config) },
+    });
+    return textResult({ added: true, source, data_source_id: schema.id, property: name, properties: summarizeSchemaProperties(schema) });
+  });
+
+  server.registerTool('notion_source_rename_property', {
+    description: 'Rename a property in a configured source schema. The property key can be the current property name or property ID.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      property_name: z.string().describe('Current property name or property ID'),
+      new_name: z.string().describe('New property name'),
+    },
+  }, async ({ source, property_name, new_name }) => {
+    const schema = await updateDataSource(resolveAlias(source), {
+      properties: { [property_name]: { name: new_name } },
+    });
+    return textResult({ renamed: true, source, data_source_id: schema.id, property: property_name, new_name, properties: summarizeSchemaProperties(schema) });
+  });
+
+  server.registerTool('notion_source_remove_property', {
+    description: 'Remove a property from a configured source schema by setting it to null. Requires confirm=true. Notion does not allow removing the title property.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      property_name: z.string().describe('Property name or property ID to remove'),
+      confirm: z.boolean().describe('Must be true to remove a schema property'),
+    },
+  }, async ({ source, property_name, confirm }) => {
+    if (confirm !== true) throw new Error('Refusing to remove schema property without confirm=true.');
+    const schema = await updateDataSource(resolveAlias(source), {
+      properties: { [property_name]: null },
+    });
+    return textResult({ removed: true, source, data_source_id: schema.id, property: property_name, properties: summarizeSchemaProperties(schema) });
   });
 
   server.registerTool('notion_source_get_by_key', {
@@ -188,6 +261,65 @@ export function registerNotionDbTools(server) {
     return textResult({ data_source_id: schema.id, properties });
   });
 
+  server.registerTool('notion_db_update_schema', {
+    description: 'Patch a Notion data source schema by passing a raw Notion data source properties object. Can add, rename, update, or remove properties.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      properties: jsonObject.describe('Raw Notion data source properties patch object. Set a property to null to remove it.'),
+    },
+  }, async ({ data_source_id, properties }) => {
+    const resolvedId = resolveAlias(data_source_id);
+    const schema = await updateDataSource(resolvedId, { properties });
+    return textResult({ updated: true, data_source_id: schema.id, properties: summarizeSchemaProperties(schema) });
+  });
+
+  server.registerTool('notion_db_add_property', {
+    description: 'Add a property to a Notion data source schema. For Notion unique_id / ID, use type=unique_id and omit prefix or set prefix=null for number-only IDs.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      name: z.string().describe('New property name'),
+      type: propertyType.describe('Notion property type to create'),
+      config: jsonObject.optional().describe('Optional Notion property type config, for example { "prefix": null } for unique_id or { "options": [...] } for select/status.'),
+    },
+  }, async ({ data_source_id, name, type, config }) => {
+    const resolvedId = resolveAlias(data_source_id);
+    const schema = await updateDataSource(resolvedId, {
+      properties: { [name]: buildSchemaProperty(type, config) },
+    });
+    return textResult({ added: true, data_source_id: schema.id, property: name, properties: summarizeSchemaProperties(schema) });
+  });
+
+  server.registerTool('notion_db_rename_property', {
+    description: 'Rename a property in a Notion data source schema. The property key can be the current property name or property ID.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      property_name: z.string().describe('Current property name or property ID'),
+      new_name: z.string().describe('New property name'),
+    },
+  }, async ({ data_source_id, property_name, new_name }) => {
+    const resolvedId = resolveAlias(data_source_id);
+    const schema = await updateDataSource(resolvedId, {
+      properties: { [property_name]: { name: new_name } },
+    });
+    return textResult({ renamed: true, data_source_id: schema.id, property: property_name, new_name, properties: summarizeSchemaProperties(schema) });
+  });
+
+  server.registerTool('notion_db_remove_property', {
+    description: 'Remove a property from a Notion data source schema by setting it to null. Requires confirm=true. Notion does not allow removing the title property.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      property_name: z.string().describe('Property name or property ID to remove'),
+      confirm: z.boolean().describe('Must be true to remove a schema property'),
+    },
+  }, async ({ data_source_id, property_name, confirm }) => {
+    if (confirm !== true) throw new Error('Refusing to remove schema property without confirm=true.');
+    const resolvedId = resolveAlias(data_source_id);
+    const schema = await updateDataSource(resolvedId, {
+      properties: { [property_name]: null },
+    });
+    return textResult({ removed: true, data_source_id: schema.id, property: property_name, properties: summarizeSchemaProperties(schema) });
+  });
+
   server.registerTool('notion_db_query', {
     description: 'Query a Notion data source using an optional explicit Notion API filter object. This is property-filter based, not semantic search.',
     inputSchema: {
@@ -316,4 +448,9 @@ export function registerNotionDbTools(server) {
     return textResult({ updated: true, ...summarizePage(page) });
   });
 
+}
+
+function buildSchemaProperty(type, config = {}) {
+  if (type === 'unique_id' && !Object.hasOwn(config, 'prefix')) return { unique_id: { prefix: null } };
+  return { [type]: config || {} };
 }

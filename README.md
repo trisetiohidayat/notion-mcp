@@ -75,6 +75,10 @@ Use these when you configure named Notion sources in local `config.json`.
 
 - `notion_source_list`
 - `notion_source_schema`
+- `notion_source_update_schema`
+- `notion_source_add_property`
+- `notion_source_rename_property`
+- `notion_source_remove_property`
 - `notion_source_get_by_key`
 - `notion_source_query`
 - `notion_source_table`
@@ -90,6 +94,10 @@ Use these when you configure named Notion sources in local `config.json`.
 Use these for raw `data_source_id` or simple aliases.
 
 - `notion_db_schema`
+- `notion_db_update_schema`
+- `notion_db_add_property`
+- `notion_db_rename_property`
+- `notion_db_remove_property`
 - `notion_db_query`
 - `notion_db_table`
 - `notion_db_count`
@@ -118,6 +126,20 @@ Example:
   "max_results": 50
 }
 ```
+
+Schema updates are supported through MCP. To add a Notion ID/Unique ID property
+without a prefix:
+
+```json
+{
+  "source": "task_list",
+  "name": "No",
+  "type": "unique_id"
+}
+```
+
+Use `notion_source_update_schema` or `notion_db_update_schema` when you need to
+pass a raw Notion schema patch for advanced property types.
 
 ## Local Config
 

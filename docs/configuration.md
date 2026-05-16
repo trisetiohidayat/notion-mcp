@@ -160,6 +160,40 @@ Group counts by one property:
 }
 ```
 
+## Schema Changes
+
+MCP tools can also update a Notion data source schema. Prefer source-level tools
+when an alias is configured:
+
+- `notion_source_add_property`
+- `notion_source_rename_property`
+- `notion_source_remove_property`
+- `notion_source_update_schema`
+
+Add a Notion ID/Unique ID property without a prefix:
+
+```json
+{
+  "source": "tasks",
+  "name": "No",
+  "type": "unique_id"
+}
+```
+
+To use a prefix, pass config:
+
+```json
+{
+  "source": "tasks",
+  "name": "Task ID",
+  "type": "unique_id",
+  "config": { "prefix": "TASK" }
+}
+```
+
+Use the raw `notion_source_update_schema` tool for advanced Notion schema patch
+objects. Removing a property is destructive and requires `confirm: true`.
+
 ## Adding a New Database
 
 1. Ensure your Notion auth has access to that database.
