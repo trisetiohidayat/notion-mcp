@@ -69,6 +69,13 @@ The server checks `NOTION_TOKEN`, `NOTION_API_TOKEN`, `NOTION_API_KEY`, `NOTION_
 Create source aliases locally:
 
 ```bash
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --status Status
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config list
+```
+
+Or edit the config file manually:
+
+```bash
 mkdir -p ~/.config/notion-db-mcp
 cat > ~/.config/notion-db-mcp/config.json <<'JSON'
 {

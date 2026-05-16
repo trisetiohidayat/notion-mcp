@@ -17,6 +17,23 @@ mkdir -p ~/.config/notion-db-mcp
 $EDITOR ~/.config/notion-db-mcp/config.json
 ```
 
+## CLI Management
+
+Use the built-in CLI for common mapping tasks:
+
+```bash
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config path
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config list
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config discover
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --title Task --status Status
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config refresh task_list
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config remove task_list --yes
+```
+
+`config add` resolves the URL/ID, fetches the Notion data source schema, guesses useful metadata, and writes local config.
+
+`config discover` lists accessible databases/data sources for the current Notion auth. It only shows content the authenticated user/integration can access.
+
 ## Simple Aliases
 
 Use `aliases` when you only need a short name for a Notion `data_source_id`:
@@ -68,9 +85,9 @@ With this metadata, source tools can be called with fewer arguments:
 
 ## Adding a New Database
 
-1. Get the Notion `data_source_id`.
-2. Ensure your Notion auth has access to that database.
-3. Add a new entry in `~/.config/notion-db-mcp/config.json`.
+1. Ensure your Notion auth has access to that database.
+2. Run `notion-mcp config add <alias> <notion-url-or-data-source-id>` from a checkout, or use `npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config add <alias> <notion-url-or-data-source-id>`.
+3. Review `~/.config/notion-db-mcp/config.json`.
 4. Restart the MCP client if the running server does not pick up the new file immediately.
 5. Verify with `notion_db_schema` or `notion_source_schema`.
 

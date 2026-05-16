@@ -50,6 +50,18 @@ The server checks `NOTION_TOKEN`, `NOTION_API_TOKEN`, `NOTION_API_KEY`, `NOTION_
 
 Tell the user to keep database aliases on the client machine:
 
+Prefer the CLI for mapping changes:
+
+```bash
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config list
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config discover
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --status Status
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config refresh task_list
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config remove task_list --yes
+```
+
+Only run `config add`, `config refresh`, or `config remove` when the user explicitly asks to change local mapping.
+
 ```bash
 mkdir -p ~/.config/notion-db-mcp
 cat > ~/.config/notion-db-mcp/config.json <<'JSON'

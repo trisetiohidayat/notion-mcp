@@ -112,6 +112,16 @@ JSON
 
 Because the MCP server runs locally in stdio mode, this file stays on the client machine.
 
+You can also manage this file with the built-in CLI:
+
+```bash
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config list
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config discover
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --status Status
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config refresh task_list
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config remove task_list --yes
+```
+
 ## Auth Model
 
 The helper reads Notion bearer tokens in this order:
@@ -135,6 +145,7 @@ export NOTION_API_TOKEN='<your-notion-token>'
 ./bin/db.js get example_tasks No 38
 ./bin/db.js update example_tasks No 38 Status Done
 ./bin/db.js update-props example_tasks No 38 Summary="Done: verified"
+./bin/notion-mcp.js config list
 ```
 
 ## Safety Behavior

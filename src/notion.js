@@ -77,6 +77,28 @@ export function retrieveDataSource(dataSourceId) {
   return notionRequest(`/data_sources/${encodeURIComponent(dataSourceId)}`);
 }
 
+export function retrieveDatabase(databaseId) {
+  return notionRequest(`/databases/${encodeURIComponent(databaseId)}`);
+}
+
+export async function searchDataSources({ query, pageSize = 50 } = {}) {
+  const results = [];
+  let startCursor;
+  do {
+    const body = {
+      page_size: pageSize,
+      filter: { property: 'object', value: 'data_source' },
+      sort: { direction: 'descending', timestamp: 'last_edited_time' },
+    };
+    if (query) body.query = query;
+    if (startCursor) body.start_cursor = startCursor;
+    const page = await notionRequest('/search', { method: 'POST', body });
+    results.push(...(page.results || []));
+    startCursor = page.has_more ? page.next_cursor : undefined;
+  } while (startCursor);
+  return results;
+}
+
 export async function queryDataSource(dataSourceId, { filter, sorts, pageSize = 100 } = {}) {
   const results = [];
   let startCursor;
