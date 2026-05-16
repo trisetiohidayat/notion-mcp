@@ -6,6 +6,29 @@ export function schemaProperties(schema) {
   return schema.properties || {};
 }
 
+export function summarizeSchemaProperties(schema) {
+  return Object.entries(schemaProperties(schema)).map(([name, property]) => summarizePropertySchema(name, property));
+}
+
+export function summarizePropertySchema(name, property) {
+  const summary = { name, type: property.type };
+  if (['select', 'status', 'multi_select'].includes(property.type)) {
+    summary.options = (property[property.type]?.options || []).map((option) => ({
+      name: option.name,
+      color: option.color,
+    }));
+  }
+  if (property.type === 'formula') summary.expression = property.formula?.expression;
+  if (property.type === 'rollup') {
+    summary.rollup = {
+      function: property.rollup?.function,
+      relation_property_name: property.rollup?.relation_property_name,
+      rollup_property_name: property.rollup?.rollup_property_name,
+    };
+  }
+  return summary;
+}
+
 export function getPropertySchema(schema, propertyName) {
   const property = schemaProperties(schema)[propertyName];
   if (!property) {

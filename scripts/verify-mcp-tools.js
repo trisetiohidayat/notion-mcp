@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { registerNotionDbTools } from '../src/register-tools.js';
-import { simplifyPropertyValue, tableRow } from '../src/properties.js';
+import { simplifyPropertyValue, summarizeSchemaProperties, tableRow } from '../src/properties.js';
 import { queryDataSource } from '../src/notion.js';
 
 const registeredTools = [];
@@ -82,6 +82,22 @@ assert.deepEqual(tableRow(page, ['No', 'Task', 'Status']), {
     Status: 'QC',
   },
 });
+
+assert.deepEqual(summarizeSchemaProperties({
+  properties: {
+    Status: {
+      type: 'status',
+      status: { options: [{ name: 'QC', color: 'blue' }] },
+    },
+    Priority: {
+      type: 'select',
+      select: { options: [{ name: 'High', color: 'red' }] },
+    },
+  },
+}), [
+  { name: 'Status', type: 'status', options: [{ name: 'QC', color: 'blue' }] },
+  { name: 'Priority', type: 'select', options: [{ name: 'High', color: 'red' }] },
+]);
 
 const originalFetch = globalThis.fetch;
 const originalToken = process.env.NOTION_API_TOKEN;

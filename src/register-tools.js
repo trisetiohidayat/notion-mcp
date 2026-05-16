@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { getDataSourceKeyProperty, getDataSourceStatusProperty, listDataSources, loadConfig, resolveDataSourceId } from './config.js';
 import { retrieveDataSource, updatePage } from './notion.js';
-import { buildExactFilter, buildProperties, getPropertySchema, schemaProperties, summarizePage } from './properties.js';
+import { buildExactFilter, buildProperties, getPropertySchema, summarizePage, summarizeSchemaProperties } from './properties.js';
 import {
   notion_db_count,
   notion_db_get_by_property,
@@ -39,7 +39,7 @@ export function registerNotionDbTools(server) {
     },
   }, async ({ source }) => {
     const schema = await retrieveDataSource(resolveAlias(source));
-    const properties = Object.entries(schemaProperties(schema)).map(([name, property]) => ({ name, type: property.type }));
+    const properties = summarizeSchemaProperties(schema);
     return textResult({ source, data_source_id: schema.id, properties });
   });
 
@@ -184,7 +184,7 @@ export function registerNotionDbTools(server) {
     },
   }, async ({ data_source_id }) => {
     const schema = await retrieveDataSource(resolveAlias(data_source_id));
-    const properties = Object.entries(schemaProperties(schema)).map(([name, property]) => ({ name, type: property.type }));
+    const properties = summarizeSchemaProperties(schema);
     return textResult({ data_source_id: schema.id, properties });
   });
 

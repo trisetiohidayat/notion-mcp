@@ -104,6 +104,8 @@ For agent-friendly reads, prefer the table/count tools over raw `notion_db_query
 They convert Notion property objects into simple JSON values, so questions like
 “list all No values where Status is QC” or “count rows by Status” do not require
 local scripts.
+Schema tools include select/status/multi-select option names so agents can
+choose valid update and filter values without guessing.
 
 Example:
 
