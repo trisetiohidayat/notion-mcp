@@ -22,6 +22,7 @@ Common Notion workflows like “update row 38” can become unreliable if an age
 
 - MCP server installation: [`docs/server.md`](docs/server.md)
 - MCP client installation: [`docs/client.md`](docs/client.md)
+- AI agent client installer guide: [`docs/ai-install-client.md`](docs/ai-install-client.md)
 - Configuration guide: [`docs/configuration.md`](docs/configuration.md)
 
 ## Tools

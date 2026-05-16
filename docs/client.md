@@ -2,6 +2,25 @@
 
 This guide configures an MCP client to use the server.
 
+For AI-agent-oriented installation instructions, see [`ai-install-client.md`](ai-install-client.md).
+
+## Fastest Codex Remote Install
+
+From a checkout of this repository:
+
+```bash
+NOTION_MCP_SERVER_URL="https://mcp.example.com/mcp" \
+  ./scripts/install-codex-client.sh
+```
+
+Then start Codex from a shell with both tokens set:
+
+```bash
+export NOTION_DB_MCP_TOKEN='<mcp-access-token>'
+export NOTION_API_TOKEN='<notion-token>'
+codex
+```
+
 ## Codex: Local stdio Server
 
 Use this when the server project is installed on the same machine as Codex:
