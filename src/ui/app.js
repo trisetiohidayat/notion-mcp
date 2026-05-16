@@ -6,8 +6,11 @@ const state = {
 const els = {
   healthDot: document.querySelector('#healthDot'),
   configPath: document.querySelector('#configPath'),
+  sourceCount: document.querySelector('#sourceCount'),
   sourceList: document.querySelector('#sourceList'),
   sourceDetails: document.querySelector('#sourceDetails'),
+  detailsTitle: document.querySelector('#detailsTitle'),
+  selectedSubtitle: document.querySelector('#selectedSubtitle'),
   refreshConfig: document.querySelector('#refreshConfig'),
   refreshSource: document.querySelector('#refreshSource'),
   removeSource: document.querySelector('#removeSource'),
@@ -41,6 +44,7 @@ async function loadConfig() {
       ? state.selectedAlias
       : state.sources[0]?.alias;
     els.configPath.textContent = config.config_path || 'No config path';
+    els.sourceCount.textContent = String(state.sources.length);
     els.healthDot.classList.add('online');
     renderSources();
     renderDetails();
@@ -82,11 +86,15 @@ function renderDetails() {
   els.removeSource.disabled = !source;
 
   if (!source) {
+    els.detailsTitle.textContent = 'No source selected';
+    els.selectedSubtitle.textContent = 'Select a mapping from the sidebar.';
     els.sourceDetails.className = 'details empty-note';
     els.sourceDetails.textContent = 'Select a source to inspect local mapping metadata.';
     return;
   }
 
+  els.detailsTitle.textContent = source.alias;
+  els.selectedSubtitle.textContent = source.name || source.id || 'Local data source mapping';
   els.sourceDetails.className = 'details';
   els.sourceDetails.replaceChildren(
     detailCell('Alias', source.alias),

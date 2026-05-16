@@ -9,103 +9,112 @@
   </head>
   <body>
     <div class="shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">LOCAL STDIO MCP</p>
-          <h1>Notion Mapping Console</h1>
-        </div>
-        <div class="status-card" aria-live="polite">
-          <span class="status-dot" id="healthDot"></span>
+      <header class="app-header">
+        <div class="brand-block">
+          <span class="app-mark" aria-hidden="true">N</span>
           <div>
-            <span class="status-label">Config path</span>
-            <code id="configPath">Loading...</code>
+            <p class="eyebrow">Local stdio MCP</p>
+            <h1>Notion source mappings</h1>
           </div>
+        </div>
+        <div class="header-meta" aria-live="polite">
+          <span class="status-pill"><span class="status-dot" id="healthDot"></span> Local UI</span>
+          <span class="config-path"><span>Config</span><code id="configPath">Loading...</code></span>
         </div>
       </header>
 
-      <main class="workspace">
-        <section class="source-pane" aria-labelledby="sourcesTitle">
-          <div class="section-head">
+      <main class="app-layout">
+        <aside class="sidebar" aria-labelledby="sourcesTitle">
+          <div class="sidebar-head">
             <div>
-              <p class="eyebrow">Sources</p>
               <h2 id="sourcesTitle">Configured mappings</h2>
+              <p><span id="sourceCount">0</span> source mappings</p>
             </div>
             <button class="icon-button" id="refreshConfig" type="button" title="Reload config" aria-label="Reload config">↻</button>
           </div>
           <div id="sourceList" class="source-list"></div>
-        </section>
+        </aside>
 
-        <section class="panel-grid">
-          <article class="panel detail-panel" aria-labelledby="detailsTitle">
+        <section class="content">
+          <article class="summary-panel" aria-labelledby="detailsTitle">
             <div class="section-head">
               <div>
-                <p class="eyebrow">Details</p>
-                <h2 id="detailsTitle">Selected source</h2>
+                <p class="eyebrow">Selected source</p>
+                <h2 id="detailsTitle">No source selected</h2>
+                <p id="selectedSubtitle" class="panel-subtitle">Select a mapping from the sidebar.</p>
               </div>
-              <button class="secondary-button" id="refreshSource" type="button" disabled>Refresh</button>
+              <div class="action-row">
+                <button class="secondary-button" id="refreshSource" type="button" disabled>Refresh schema</button>
+                <button class="danger-button" id="removeSource" type="button" disabled>Remove</button>
+              </div>
             </div>
             <div id="sourceDetails" class="details empty-note">Select a source to inspect local mapping metadata.</div>
-            <button class="danger-button" id="removeSource" type="button" disabled>Remove mapping</button>
           </article>
 
-          <article class="panel" aria-labelledby="discoverTitle">
-            <div class="section-head">
-              <div>
-                <p class="eyebrow">Discover</p>
-                <h2 id="discoverTitle">Accessible Notion data sources</h2>
-              </div>
-            </div>
-            <form id="discoverForm" class="inline-form">
-              <label for="discoverQuery">Search query</label>
-              <div class="inline-controls">
-                <input id="discoverQuery" name="query" type="search" autocomplete="off" placeholder="Tasks, roadmap, CRM...">
-                <button type="submit">Search</button>
-              </div>
-            </form>
-            <div id="discoverResults" class="discover-results empty-note">Search uses your local Notion auth and never displays tokens.</div>
-          </article>
-
-          <article class="panel add-panel" aria-labelledby="addTitle">
-            <div class="section-head">
-              <div>
-                <p class="eyebrow">Add</p>
-                <h2 id="addTitle">Create source mapping</h2>
-              </div>
-            </div>
-            <form id="addForm" class="mapping-form">
-              <label for="alias">Alias</label>
-              <input id="alias" name="alias" required pattern="[A-Za-z0-9_.-]+" placeholder="example_tasks">
-
-              <label for="input">Notion URL or data_source_id</label>
-              <input id="input" name="input" required placeholder="https://www.notion.so/...">
-
-              <div class="field-grid">
+          <section class="work-grid">
+            <article class="panel add-panel" aria-labelledby="addTitle">
+              <div class="section-head">
                 <div>
-                  <label for="key">Key property</label>
-                  <input id="key" name="key" placeholder="No">
-                </div>
-                <div>
-                  <label for="title">Title property</label>
-                  <input id="title" name="title" placeholder="Task">
-                </div>
-                <div>
-                  <label for="status">Status property</label>
-                  <input id="status" name="status" placeholder="Status">
-                </div>
-                <div>
-                  <label for="name">Display name</label>
-                  <input id="name" name="name" placeholder="Tasks">
+                  <p class="eyebrow">Add mapping</p>
+                  <h2 id="addTitle">Connect a Notion source</h2>
                 </div>
               </div>
+              <form id="addForm" class="mapping-form card-form">
+                <div>
+                  <label for="alias">Alias</label>
+                  <input id="alias" name="alias" required pattern="[A-Za-z0-9_.-]+" placeholder="example_tasks">
+                </div>
 
-              <label class="checkbox-row">
-                <input id="overwrite" name="overwrite" type="checkbox">
-                <span>Overwrite existing alias</span>
-              </label>
+                <div>
+                  <label for="input">Notion URL or data_source_id</label>
+                  <input id="input" name="input" required placeholder="https://www.notion.so/...">
+                </div>
 
-              <button type="submit">Add mapping</button>
-            </form>
-          </article>
+                <div class="field-grid">
+                  <div>
+                    <label for="key">Key property</label>
+                    <input id="key" name="key" placeholder="No">
+                  </div>
+                  <div>
+                    <label for="title">Title property</label>
+                    <input id="title" name="title" placeholder="Task">
+                  </div>
+                  <div>
+                    <label for="status">Status property</label>
+                    <input id="status" name="status" placeholder="Status">
+                  </div>
+                  <div>
+                    <label for="name">Display name</label>
+                    <input id="name" name="name" placeholder="Tasks">
+                  </div>
+                </div>
+
+                <label class="checkbox-row">
+                  <input id="overwrite" name="overwrite" type="checkbox">
+                  <span>Overwrite existing alias</span>
+                </label>
+
+                <button type="submit">Add mapping</button>
+              </form>
+            </article>
+
+            <article class="panel" aria-labelledby="discoverTitle">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Discover</p>
+                  <h2 id="discoverTitle">Available data sources</h2>
+                </div>
+              </div>
+              <form id="discoverForm" class="inline-form card-form">
+                <label for="discoverQuery">Search query</label>
+                <div class="inline-controls">
+                  <input id="discoverQuery" name="query" type="search" autocomplete="off" placeholder="Tasks, roadmap, CRM...">
+                  <button type="submit">Search</button>
+                </div>
+              </form>
+              <div id="discoverResults" class="discover-results empty-note">Search uses your local Notion auth and never displays tokens.</div>
+            </article>
+          </section>
         </section>
       </main>
     </div>
