@@ -127,6 +127,9 @@ claude mcp get notion_db
 
 Expected tools:
 
+- `notion_api_request`
+- `notion_api_paginate`
+- `notion_file_upload_send`
 - `notion_source_list`
 - `notion_source_schema`
 - `notion_source_update_schema`
@@ -178,6 +181,10 @@ Notion ID/Unique ID property with `notion_source_add_property`:
 
 Only remove schema properties when the user explicitly confirms the destructive
 change; `notion_source_remove_property` requires `confirm: true`.
+
+For Notion API operations without a dedicated convenience tool, use
+`notion_api_request` or `notion_api_paginate` rather than writing local scripts.
+Use `notion_file_upload_send` for the multipart file bytes step.
 
 ## Troubleshooting
 

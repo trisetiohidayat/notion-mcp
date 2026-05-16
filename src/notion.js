@@ -2,6 +2,8 @@ const API_BASE = 'https://api.notion.com/v1';
 const NOTION_VERSION = process.env.NOTION_VERSION || '2026-03-11';
 const NOTION_CONFIG_DIR = `${process.env.HOME || process.cwd()}/.config/notion`;
 
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { getRequestNotionToken } from './token-context.js';
 
 export class NotionError extends Error {
@@ -77,6 +79,58 @@ export function retrieveDataSource(dataSourceId) {
   return notionRequest(`/data_sources/${encodeURIComponent(dataSourceId)}`);
 }
 
+export function notionApiRequest({ method = 'GET', path, body } = {}) {
+  return notionRequest(normalizeNotionApiPath(path), { method, body });
+}
+
+export async function notionApiPaginate({ method = 'POST', path: apiPath, body, pageSize = 100, maxResults } = {}) {
+  const results = [];
+  let startCursor;
+  let lastPage;
+  do {
+    const remaining = maxResults ? Math.max(maxResults - results.length, 0) : pageSize;
+    if (maxResults && remaining === 0) break;
+    const page_size = Math.min(pageSize, remaining || pageSize, 100);
+    const pageBody = { ...(body || {}), page_size };
+    if (startCursor) pageBody.start_cursor = startCursor;
+    lastPage = await notionApiRequest({ method, path: apiPath, body: method === 'GET' ? undefined : pageBody });
+    results.push(...(lastPage.results || []));
+    startCursor = lastPage.has_more ? lastPage.next_cursor : undefined;
+  } while (startCursor && (!maxResults || results.length < maxResults));
+
+  return {
+    object: lastPage?.object || 'list',
+    count: maxResults ? Math.min(results.length, maxResults) : results.length,
+    has_more: Boolean(startCursor),
+    next_cursor: startCursor,
+    results: maxResults ? results.slice(0, maxResults) : results,
+  };
+}
+
+export async function sendFileUpload(fileUploadId, filePath) {
+  const token = await getAccessToken();
+  const file = await fs.readFile(filePath);
+  const form = new FormData();
+  form.append('file', new Blob([file]), path.basename(filePath));
+
+  const response = await fetch(`${API_BASE}/file_uploads/${encodeURIComponent(fileUploadId)}/send`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Notion-Version': NOTION_VERSION,
+    },
+    body: form,
+  });
+
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : {};
+  if (!response.ok) {
+    const message = payload.message || response.statusText;
+    throw new NotionError(`Notion API error ${response.status}: ${message}`);
+  }
+  return payload;
+}
+
 export function updateDataSource(dataSourceId, body) {
   return notionRequest(`/data_sources/${encodeURIComponent(dataSourceId)}`, {
     method: 'PATCH',
@@ -132,4 +186,12 @@ export function updatePage(pageId, properties) {
     method: 'PATCH',
     body: { properties },
   });
+}
+
+function normalizeNotionApiPath(input) {
+  if (!input) throw new NotionError('Missing Notion API path.');
+  const text = String(input);
+  if (/^https?:\/\//i.test(text)) throw new NotionError('Use a relative Notion API path, not a full URL.');
+  const withSlash = text.startsWith('/') ? text : `/${text}`;
+  return withSlash.startsWith('/v1/') ? withSlash.slice(3) : withSlash;
 }

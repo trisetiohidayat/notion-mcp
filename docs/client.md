@@ -159,6 +159,9 @@ export NOTION_DB_CONFIG="$HOME/.config/notion-db-mcp/config.json"
 
 After restart, the MCP client should see these tools:
 
+- `notion_api_request`
+- `notion_api_paginate`
+- `notion_file_upload_send`
 - `notion_source_list`
 - `notion_source_schema`
 - `notion_source_update_schema`

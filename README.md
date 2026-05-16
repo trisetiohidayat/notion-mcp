@@ -65,6 +65,7 @@ claude
 - MCP client installation: [`docs/client.md`](docs/client.md)
 - AI agent client installer guide: [`docs/ai-install-client.md`](docs/ai-install-client.md)
 - Local configuration guide: [`docs/configuration.md`](docs/configuration.md)
+- Notion API coverage: [`docs/api-coverage.md`](docs/api-coverage.md)
 - Local development/server guide: [`docs/server.md`](docs/server.md)
 
 ## Tools
@@ -73,6 +74,9 @@ claude
 
 Use these when you configure named Notion sources in local `config.json`.
 
+- `notion_api_request`
+- `notion_api_paginate`
+- `notion_file_upload_send`
 - `notion_source_list`
 - `notion_source_schema`
 - `notion_source_update_schema`

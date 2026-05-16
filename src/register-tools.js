@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { getDataSourceKeyProperty, getDataSourceStatusProperty, listDataSources, loadConfig, resolveDataSourceId } from './config.js';
-import { retrieveDataSource, updateDataSource, updatePage } from './notion.js';
+import { notionApiPaginate, notionApiRequest, retrieveDataSource, sendFileUpload, updateDataSource, updatePage } from './notion.js';
 import { buildExactFilter, buildProperties, getPropertySchema, summarizePage, summarizeSchemaProperties } from './properties.js';
 import {
   notion_db_count,
@@ -32,6 +32,7 @@ const propertyType = z.enum([
   'rollup',
   'unique_id',
 ]);
+const httpMethod = z.enum(['GET', 'POST', 'PATCH', 'DELETE']);
 
 function textResult(value) {
   return {
@@ -45,6 +46,38 @@ function resolveAlias(aliasOrId) {
 }
 
 export function registerNotionDbTools(server) {
+  server.registerTool('notion_api_request', {
+    description: 'Advanced escape hatch: call any JSON Notion API endpoint through MCP. Use relative paths like /pages/{id}, /blocks/{id}/children, /search, or /v1/users/me. Does not support multipart file bytes; use notion_file_upload_send for that.',
+    inputSchema: {
+      method: httpMethod.optional().describe('HTTP method. Defaults to GET.'),
+      path: z.string().describe('Relative Notion API path, with or without /v1 prefix. Full URLs are rejected.'),
+      body: jsonObject.optional().describe('Optional JSON request body for POST/PATCH/DELETE endpoints.'),
+    },
+  }, async ({ method = 'GET', path, body }) => {
+    return textResult(await notionApiRequest({ method, path, body }));
+  });
+
+  server.registerTool('notion_api_paginate', {
+    description: 'Advanced escape hatch: paginate any Notion API list/query endpoint that returns results/has_more/next_cursor.',
+    inputSchema: {
+      method: z.enum(['POST']).optional().describe('Pagination currently sends cursor/page_size in a JSON body. Defaults to POST.'),
+      path: z.string().describe('Relative Notion API path, for example /search or /data_sources/{id}/query.'),
+      body: jsonObject.optional().describe('Base JSON request body. start_cursor and page_size are managed by this tool.'),
+      page_size: pageSize,
+      max_results: maxResults,
+    },
+  }, async ({ method = 'POST', path, body, page_size, max_results }) => {
+    return textResult(await notionApiPaginate({ method, path, body, pageSize: page_size, maxResults: max_results }));
+  });
+
+  server.registerTool('notion_file_upload_send', {
+    description: 'Upload local file bytes to an existing Notion file_upload_id using the multipart /file_uploads/{id}/send endpoint.',
+    inputSchema: {
+      file_upload_id: z.string().describe('Notion file upload ID returned by POST /file_uploads'),
+      file_path: z.string().describe('Local file path to upload from this machine'),
+    },
+  }, async ({ file_upload_id, file_path }) => textResult(await sendFileUpload(file_upload_id, file_path)));
+
   server.registerTool('notion_source_list', {
     description: 'List configured Notion data source aliases with metadata such as id, name, description, key_property, title_property, and status_property.',
     inputSchema: {},

@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { registerNotionDbTools } from '../src/register-tools.js';
 import { simplifyPropertyValue, summarizeSchemaProperties, tableRow } from '../src/properties.js';
-import { queryDataSource } from '../src/notion.js';
+import { notionApiPaginate, notionApiRequest, queryDataSource, sendFileUpload } from '../src/notion.js';
 
 const registeredTools = [];
 registerNotionDbTools({
@@ -11,6 +14,9 @@ registerNotionDbTools({
 });
 
 const requiredTools = [
+  'notion_api_request',
+  'notion_api_paginate',
+  'notion_file_upload_send',
   'notion_source_list',
   'notion_source_schema',
   'notion_source_update_schema',
@@ -134,6 +140,62 @@ const limitedRows = await queryDataSource('ds1', { maxResults: 5, pageSize: 3 })
 assert.equal(limitedRows.length, 5);
 assert.deepEqual(requestedPageSizes, [3, 2]);
 
+let rawRequest;
+globalThis.fetch = async (url, options) => {
+  rawRequest = { url, method: options.method, body: options.body };
+  return {
+    ok: true,
+    async text() {
+      return JSON.stringify({ ok: true });
+    },
+  };
+};
+await notionApiRequest({ method: 'PATCH', path: '/v1/pages/page-1', body: { archived: true } });
+assert.equal(rawRequest.url, 'https://api.notion.com/v1/pages/page-1');
+assert.equal(rawRequest.method, 'PATCH');
+assert.equal(rawRequest.body, JSON.stringify({ archived: true }));
+assert.throws(() => notionApiRequest({ path: 'https://api.notion.com/v1/users/me' }), /relative Notion API path/);
+
+const paginatePageSizes = [];
+let paginateCount = 0;
+globalThis.fetch = async (_url, options) => {
+  paginateCount += 1;
+  const body = JSON.parse(options.body);
+  paginatePageSizes.push(body.page_size);
+  return {
+    ok: true,
+    async text() {
+      return JSON.stringify({
+        object: 'list',
+        results: Array.from({ length: body.page_size }, (_, index) => ({ id: `item-${paginateCount}-${index}` })),
+        has_more: paginateCount < 4,
+        next_cursor: `cursor-${paginateCount}`,
+      });
+    },
+  };
+};
+const paginated = await notionApiPaginate({ path: '/search', body: { query: 'Task' }, pageSize: 4, maxResults: 6 });
+assert.equal(paginated.count, 6);
+assert.deepEqual(paginatePageSizes, [4, 2]);
+
+const tmpFile = path.join(os.tmpdir(), `notion-mcp-upload-${process.pid}.txt`);
+await fs.writeFile(tmpFile, 'upload test');
+let fileUploadRequest;
+globalThis.fetch = async (url, options) => {
+  fileUploadRequest = { url, method: options.method, body: options.body };
+  return {
+    ok: true,
+    async text() {
+      return JSON.stringify({ id: 'upload-1', status: 'uploaded' });
+    },
+  };
+};
+await sendFileUpload('upload-1', tmpFile);
+assert.equal(fileUploadRequest.url, 'https://api.notion.com/v1/file_uploads/upload-1/send');
+assert.equal(fileUploadRequest.method, 'POST');
+assert.equal(fileUploadRequest.body instanceof FormData, true);
+await fs.unlink(tmpFile);
+
 globalThis.fetch = originalFetch;
 if (originalToken === undefined) {
   delete process.env.NOTION_API_TOKEN;
@@ -171,4 +233,4 @@ if (originalTokenForSchema === undefined) {
   process.env.NOTION_API_TOKEN = originalTokenForSchema;
 }
 
-console.log(`Verified ${registeredTools.length} MCP tools, scalar conversion, query limits, and schema updates.`);
+console.log(`Verified ${registeredTools.length} MCP tools, scalar conversion, query limits, schema updates, and raw API coverage.`);
