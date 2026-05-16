@@ -130,13 +130,32 @@ Expected tools:
 - `notion_source_list`
 - `notion_source_schema`
 - `notion_source_get_by_key`
+- `notion_source_query`
+- `notion_source_table`
+- `notion_source_count`
+- `notion_source_group_count`
+- `notion_source_query_by_property`
+- `notion_source_count_by_property`
 - `notion_source_update_by_key`
 - `notion_source_update_status_by_key`
 - `notion_db_schema`
 - `notion_db_query`
+- `notion_db_table`
+- `notion_db_count`
+- `notion_db_group_count`
+- `notion_db_query_by_property`
+- `notion_db_count_by_property`
 - `notion_db_get_by_property`
 - `notion_db_update_page`
 - `notion_db_update_by_property`
+
+For list/count/report questions, instruct the agent to prefer the source table
+and count tools instead of writing local scripts:
+
+- `notion_source_query_by_property` for exact matches such as `Status = QC`
+- `notion_source_table` for selected columns
+- `notion_source_count` for filtered counts
+- `notion_source_group_count` for counts by status/select/person/etc.
 
 ## Troubleshooting
 

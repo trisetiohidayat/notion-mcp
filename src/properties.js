@@ -75,7 +75,7 @@ function parseBoolean(value) {
 export function pageTitle(page) {
   for (const property of Object.values(page.properties || {})) {
     if (property.type === 'title') {
-      return (property.title || []).map((part) => part.plain_text || '').join('') || '(untitled)';
+      return richTextToPlainText(property.title) || '(untitled)';
     }
   }
   return '(untitled)';
@@ -83,4 +83,100 @@ export function pageTitle(page) {
 
 export function summarizePage(page) {
   return { page_id: page.id, title: pageTitle(page), url: page.url };
+}
+
+export function richTextToPlainText(parts = []) {
+  return parts.map((part) => part.plain_text || part.text?.content || '').join('');
+}
+
+export function simplifyPropertyValue(property) {
+  if (!property || !property.type) return undefined;
+  const type = property.type;
+  const value = property[type];
+
+  if (type === 'title' || type === 'rich_text') return richTextToPlainText(value);
+  if (type === 'number') return value ?? null;
+  if (type === 'checkbox') return Boolean(value);
+  if (type === 'select' || type === 'status') return value?.name ?? null;
+  if (type === 'multi_select') return (value || []).map((option) => option.name);
+  if (type === 'date') return simplifyDate(value);
+  if (type === 'url' || type === 'email' || type === 'phone_number') return value ?? null;
+  if (type === 'unique_id') return simplifyUniqueId(value);
+  if (type === 'people') return (value || []).map(simplifyUser);
+  if (type === 'created_by' || type === 'last_edited_by') return simplifyUser(value);
+  if (type === 'created_time' || type === 'last_edited_time') return value ?? null;
+  if (type === 'relation') return (value || []).map((item) => item.id).filter(Boolean);
+  if (type === 'files') return (value || []).map(simplifyFile);
+  if (type === 'formula') return simplifyTypedValue(value);
+  if (type === 'rollup') return simplifyRollup(value);
+  if (type === 'button') return value?.name ?? null;
+
+  return value ?? null;
+}
+
+export function simplifyPageProperties(page, propertyNames) {
+  const properties = page.properties || {};
+  const names = propertyNames?.length ? propertyNames : Object.keys(properties);
+  const output = {};
+  for (const name of names) {
+    output[name] = simplifyPropertyValue(properties[name]);
+  }
+  return output;
+}
+
+export function tableRow(page, propertyNames) {
+  return {
+    ...summarizePage(page),
+    properties: simplifyPageProperties(page, propertyNames),
+  };
+}
+
+function simplifyDate(value) {
+  if (!value) return null;
+  if (!value.end && !value.time_zone) return value.start ?? null;
+  return {
+    start: value.start ?? null,
+    end: value.end ?? null,
+    time_zone: value.time_zone ?? null,
+  };
+}
+
+function simplifyUniqueId(value) {
+  if (!value) return null;
+  if (value.prefix) return `${value.prefix}-${value.number}`;
+  return value.number ?? null;
+}
+
+function simplifyUser(user) {
+  if (!user) return null;
+  return user.name || user.id || null;
+}
+
+function simplifyFile(file) {
+  if (!file) return null;
+  return {
+    name: file.name || null,
+    url: file.file?.url || file.external?.url || null,
+  };
+}
+
+function simplifyTypedValue(value) {
+  if (!value || !value.type) return null;
+  const type = value.type;
+  if (type === 'string') return value.string ?? null;
+  if (type === 'number') return value.number ?? null;
+  if (type === 'boolean') return value.boolean ?? null;
+  if (type === 'date') return simplifyDate(value.date);
+  if (type === 'array') return (value.array || []).map(simplifyTypedValue);
+  return value[type] ?? null;
+}
+
+function simplifyRollup(value) {
+  if (!value || !value.type) return null;
+  if (value.type === 'array') return (value.array || []).map(simplifyPropertyValue);
+  if (value.type === 'number') return value.number ?? null;
+  if (value.type === 'date') return simplifyDate(value.date);
+  if (value.type === 'incomplete') return { incomplete: true };
+  if (value.type === 'unsupported') return { unsupported: true };
+  return value[value.type] ?? null;
 }

@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { getDataSourceKeyProperty, getDataSourceStatusProperty, listDataSources, loadConfig, resolveDataSourceId } from './config.js';
 import { retrieveDataSource, updatePage } from './notion.js';
-import { buildProperties, schemaProperties, summarizePage } from './properties.js';
+import { buildExactFilter, buildProperties, getPropertySchema, schemaProperties, summarizePage } from './properties.js';
 import {
+  notion_db_count,
   notion_db_get_by_property,
+  notion_db_group_count,
   notion_db_query,
+  notion_db_table,
   notion_db_update_by_property,
 } from './tools.js';
 
@@ -85,6 +88,87 @@ export function registerNotionDbTools(server) {
     return textResult({ updated: true, ...summarizePage(page) });
   });
 
+  server.registerTool('notion_source_query', {
+    description: 'Query a configured source and return table-style rows with selected Notion properties converted to simple JSON values.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object'),
+      sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
+      properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+    },
+  }, async ({ source, filters, sorts, properties }) => {
+    const result = await notion_db_table(resolveAlias(source), filters, sorts, properties);
+    return textResult({ source, ...result });
+  });
+
+  server.registerTool('notion_source_table', {
+    description: 'Return rows from a configured source as a compact table with page metadata and selected scalar property values.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object'),
+      sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
+      properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+    },
+  }, async ({ source, filters, sorts, properties }) => {
+    const result = await notion_db_table(resolveAlias(source), filters, sorts, properties);
+    return textResult({ source, ...result });
+  });
+
+  server.registerTool('notion_source_count', {
+    description: 'Count rows in a configured source that match an optional Notion API filter.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object'),
+    },
+  }, async ({ source, filters }) => {
+    const result = await notion_db_count(resolveAlias(source), filters);
+    return textResult({ source, ...result });
+  });
+
+  server.registerTool('notion_source_group_count', {
+    description: 'Group matching rows in a configured source by one property and return counts per value.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      group_property: z.string().describe('Property name to group by, for example Status'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object applied before grouping'),
+    },
+  }, async ({ source, group_property, filters }) => {
+    const result = await notion_db_group_count(resolveAlias(source), group_property, filters);
+    return textResult({ source, ...result });
+  });
+
+  server.registerTool('notion_source_query_by_property', {
+    description: 'Query a configured source by one exact property match and return table-style rows with selected simple property values.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      property_name: z.string().describe('Property name to match exactly'),
+      value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
+      sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
+      properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+    },
+  }, async ({ source, property_name, value, sorts, properties }) => {
+    const dataSourceId = resolveAlias(source);
+    const schema = await retrieveDataSource(dataSourceId);
+    const filter = buildExactFilter(property_name, value, getPropertySchema(schema, property_name));
+    const result = await notion_db_table(dataSourceId, filter, sorts, properties);
+    return textResult({ source, filter_property: property_name, filter_value: value, ...result });
+  });
+
+  server.registerTool('notion_source_count_by_property', {
+    description: 'Count rows in a configured source by one exact property match, using schema-aware filter construction.',
+    inputSchema: {
+      source: z.string().describe('Configured source alias or raw data_source_id'),
+      property_name: z.string().describe('Property name to match exactly'),
+      value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
+    },
+  }, async ({ source, property_name, value }) => {
+    const dataSourceId = resolveAlias(source);
+    const schema = await retrieveDataSource(dataSourceId);
+    const filter = buildExactFilter(property_name, value, getPropertySchema(schema, property_name));
+    const result = await notion_db_count(dataSourceId, filter);
+    return textResult({ source, filter_property: property_name, filter_value: value, ...result });
+  });
+
   server.registerTool('notion_db_schema', {
     description: 'Fetch Notion data source schema and list property names/types. Accepts alias or raw data_source_id.',
     inputSchema: {
@@ -106,6 +190,74 @@ export function registerNotionDbTools(server) {
   }, async ({ data_source_id, filters, sorts }) => {
     const pages = await notion_db_query(resolveAlias(data_source_id), filters, sorts);
     return textResult({ count: pages.length, pages: pages.map(summarizePage) });
+  });
+
+  server.registerTool('notion_db_table', {
+    description: 'Query a Notion data source and return compact rows with selected Notion properties converted to simple JSON values.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object'),
+      sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
+      properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+    },
+  }, async ({ data_source_id, filters, sorts, properties }) => {
+    const result = await notion_db_table(resolveAlias(data_source_id), filters, sorts, properties);
+    return textResult({ data_source_id: resolveAlias(data_source_id), ...result });
+  });
+
+  server.registerTool('notion_db_count', {
+    description: 'Count rows in a Notion data source that match an optional Notion API filter.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object'),
+    },
+  }, async ({ data_source_id, filters }) => {
+    const result = await notion_db_count(resolveAlias(data_source_id), filters);
+    return textResult({ data_source_id: resolveAlias(data_source_id), ...result });
+  });
+
+  server.registerTool('notion_db_group_count', {
+    description: 'Group matching rows in a Notion data source by one property and return counts per value.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      group_property: z.string().describe('Property name to group by, for example Status'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object applied before grouping'),
+    },
+  }, async ({ data_source_id, group_property, filters }) => {
+    const result = await notion_db_group_count(resolveAlias(data_source_id), group_property, filters);
+    return textResult({ data_source_id: resolveAlias(data_source_id), ...result });
+  });
+
+  server.registerTool('notion_db_query_by_property', {
+    description: 'Query a Notion data source by one exact property match and return table-style rows with selected simple property values.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      property_name: z.string().describe('Property name to match exactly'),
+      value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
+      sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
+      properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+    },
+  }, async ({ data_source_id, property_name, value, sorts, properties }) => {
+    const resolvedId = resolveAlias(data_source_id);
+    const schema = await retrieveDataSource(resolvedId);
+    const filter = buildExactFilter(property_name, value, getPropertySchema(schema, property_name));
+    const result = await notion_db_table(resolvedId, filter, sorts, properties);
+    return textResult({ data_source_id: resolvedId, filter_property: property_name, filter_value: value, ...result });
+  });
+
+  server.registerTool('notion_db_count_by_property', {
+    description: 'Count rows in a Notion data source by one exact property match, using schema-aware filter construction.',
+    inputSchema: {
+      data_source_id: z.string().describe('Data source ID or local alias from config.json'),
+      property_name: z.string().describe('Property name to match exactly'),
+      value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
+    },
+  }, async ({ data_source_id, property_name, value }) => {
+    const resolvedId = resolveAlias(data_source_id);
+    const schema = await retrieveDataSource(resolvedId);
+    const filter = buildExactFilter(property_name, value, getPropertySchema(schema, property_name));
+    const result = await notion_db_count(resolvedId, filter);
+    return textResult({ data_source_id: resolvedId, filter_property: property_name, filter_value: value, ...result });
   });
 
   server.registerTool('notion_db_get_by_property', {

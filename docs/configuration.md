@@ -120,6 +120,42 @@ With this metadata, source tools can be called with fewer arguments:
 }
 ```
 
+## Reporting Queries
+
+For agent-friendly reads, use the source-level table and count tools. They use
+the local alias metadata and return simple JSON values instead of raw Notion
+property objects.
+
+Count rows by exact property match:
+
+```json
+{
+  "source": "tasks",
+  "property_name": "Status",
+  "value": "QC"
+}
+```
+
+List selected columns for exact property match:
+
+```json
+{
+  "source": "tasks",
+  "property_name": "Status",
+  "value": "QC",
+  "properties": ["No", "Task", "Status"]
+}
+```
+
+Group counts by one property:
+
+```json
+{
+  "source": "tasks",
+  "group_property": "Status"
+}
+```
+
 ## Adding a New Database
 
 1. Ensure your Notion auth has access to that database.

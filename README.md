@@ -76,6 +76,12 @@ Use these when you configure named Notion sources in local `config.json`.
 - `notion_source_list`
 - `notion_source_schema`
 - `notion_source_get_by_key`
+- `notion_source_query`
+- `notion_source_table`
+- `notion_source_count`
+- `notion_source_group_count`
+- `notion_source_query_by_property`
+- `notion_source_count_by_property`
 - `notion_source_update_by_key`
 - `notion_source_update_status_by_key`
 
@@ -85,9 +91,30 @@ Use these for raw `data_source_id` or simple aliases.
 
 - `notion_db_schema`
 - `notion_db_query`
+- `notion_db_table`
+- `notion_db_count`
+- `notion_db_group_count`
+- `notion_db_query_by_property`
+- `notion_db_count_by_property`
 - `notion_db_get_by_property`
 - `notion_db_update_page`
 - `notion_db_update_by_property`
+
+For agent-friendly reads, prefer the table/count tools over raw `notion_db_query`.
+They convert Notion property objects into simple JSON values, so questions like
+“list all No values where Status is QC” or “count rows by Status” do not require
+local scripts.
+
+Example:
+
+```json
+{
+  "source": "task_list",
+  "property_name": "Status",
+  "value": "QC",
+  "properties": ["No", "Task", "Status"]
+}
+```
 
 ## Local Config
 
