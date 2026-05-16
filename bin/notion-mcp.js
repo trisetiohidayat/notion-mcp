@@ -18,6 +18,9 @@ try {
   } else if (command === 'config') {
     const { configMain } = await import('../src/config-cli.js');
     await configMain(args);
+  } else if (command === 'ui') {
+    const { startUiServer } = await import('../src/ui-server.js');
+    await startUiServer();
   } else {
     console.error(`Unknown command: ${command}`);
     printHelp();
@@ -37,10 +40,12 @@ Commands:
   notion-mcp http    Start Streamable HTTP MCP server
   notion-mcp db ...  Run CLI database helper
   notion-mcp config  Manage local source mappings
+  notion-mcp ui      Start local config UI
 
 Examples:
   notion-mcp serve
   notion-mcp db schema example_tasks
   notion-mcp config list
+  notion-mcp ui
 `);
 }

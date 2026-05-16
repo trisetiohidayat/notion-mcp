@@ -53,6 +53,24 @@ npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config remove t
 
 `config discover` lists accessible databases/data sources for the current Notion auth. It only shows content the authenticated user/integration can access.
 
+## Local UI Management
+
+If you prefer a browser UI for manual mapping changes, run:
+
+```bash
+notion-mcp ui
+```
+
+The UI starts a local-only HTTP server at `http://127.0.0.1:3099` by default and manages the same config file as the CLI. It supports listing configured sources, discovering accessible Notion data sources, adding mappings, refreshing one source, and removing mappings with confirmation.
+
+Optional environment overrides:
+
+```bash
+NOTION_MCP_UI_HOST=127.0.0.1 NOTION_MCP_UI_PORT=3099 notion-mcp ui
+```
+
+Do not bind the UI to a public interface unless you are on a trusted machine and network. The UI uses your local Notion auth but does not show Notion tokens.
+
 ## Simple Aliases
 
 Use `aliases` when you only need a short name for a Notion `data_source_id`:

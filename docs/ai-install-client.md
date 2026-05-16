@@ -70,6 +70,14 @@ npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config remove t
 
 Only run `config add`, `config refresh`, or `config remove` when the user explicitly asks to change local mapping.
 
+If the user asks for a visual or manual mapping workflow, suggest the local UI:
+
+```bash
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp ui
+```
+
+Explain that it starts on `http://127.0.0.1:3099` by default, manages only local config, and is not the MCP transport.
+
 ```bash
 mkdir -p ~/.config/notion-db-mcp
 cat > ~/.config/notion-db-mcp/config.json <<'JSON'

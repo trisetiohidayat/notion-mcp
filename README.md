@@ -126,6 +126,22 @@ notion-mcp config discover
 notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --status Status
 ```
 
+## Local UI
+
+For visual mapping management, start the local config UI:
+
+```bash
+notion-mcp ui
+```
+
+By default it listens only on `http://127.0.0.1:3099`. Override the bind address only when you know why:
+
+```bash
+NOTION_MCP_UI_HOST=127.0.0.1 NOTION_MCP_UI_PORT=3099 notion-mcp ui
+```
+
+The UI manages the same client-side config file as `notion-mcp config ...`. It can list mappings, discover accessible Notion data sources, add mappings, refresh source metadata, and remove mappings with confirmation. It does not display Notion tokens.
+
 You can also manage this file with the built-in CLI:
 
 ```bash

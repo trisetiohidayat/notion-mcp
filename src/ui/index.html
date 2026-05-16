@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notion MCP Local UI</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23080b0b'/%3E%3Cpath d='M8 10h16v3H8zm0 6h16v3H8zm0 6h10v3H8z' fill='%2357d68d'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">LOCAL STDIO MCP</p>
+          <h1>Notion Mapping Console</h1>
+        </div>
+        <div class="status-card" aria-live="polite">
+          <span class="status-dot" id="healthDot"></span>
+          <div>
+            <span class="status-label">Config path</span>
+            <code id="configPath">Loading...</code>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="source-pane" aria-labelledby="sourcesTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Sources</p>
+              <h2 id="sourcesTitle">Configured mappings</h2>
+            </div>
+            <button class="icon-button" id="refreshConfig" type="button" title="Reload config" aria-label="Reload config">↻</button>
+          </div>
+          <div id="sourceList" class="source-list"></div>
+        </section>
+
+        <section class="panel-grid">
+          <article class="panel detail-panel" aria-labelledby="detailsTitle">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Details</p>
+                <h2 id="detailsTitle">Selected source</h2>
+              </div>
+              <button class="secondary-button" id="refreshSource" type="button" disabled>Refresh</button>
+            </div>
+            <div id="sourceDetails" class="details empty-note">Select a source to inspect local mapping metadata.</div>
+            <button class="danger-button" id="removeSource" type="button" disabled>Remove mapping</button>
+          </article>
+
+          <article class="panel" aria-labelledby="discoverTitle">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Discover</p>
+                <h2 id="discoverTitle">Accessible Notion data sources</h2>
+              </div>
+            </div>
+            <form id="discoverForm" class="inline-form">
+              <label for="discoverQuery">Search query</label>
+              <div class="inline-controls">
+                <input id="discoverQuery" name="query" type="search" autocomplete="off" placeholder="Tasks, roadmap, CRM...">
+                <button type="submit">Search</button>
+              </div>
+            </form>
+            <div id="discoverResults" class="discover-results empty-note">Search uses your local Notion auth and never displays tokens.</div>
+          </article>
+
+          <article class="panel add-panel" aria-labelledby="addTitle">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Add</p>
+                <h2 id="addTitle">Create source mapping</h2>
+              </div>
+            </div>
+            <form id="addForm" class="mapping-form">
+              <label for="alias">Alias</label>
+              <input id="alias" name="alias" required pattern="[A-Za-z0-9_.-]+" placeholder="example_tasks">
+
+              <label for="input">Notion URL or data_source_id</label>
+              <input id="input" name="input" required placeholder="https://www.notion.so/...">
+
+              <div class="field-grid">
+                <div>
+                  <label for="key">Key property</label>
+                  <input id="key" name="key" placeholder="No">
+                </div>
+                <div>
+                  <label for="title">Title property</label>
+                  <input id="title" name="title" placeholder="Task">
+                </div>
+                <div>
+                  <label for="status">Status property</label>
+                  <input id="status" name="status" placeholder="Status">
+                </div>
+                <div>
+                  <label for="name">Display name</label>
+                  <input id="name" name="name" placeholder="Tasks">
+                </div>
+              </div>
+
+              <label class="checkbox-row">
+                <input id="overwrite" name="overwrite" type="checkbox">
+                <span>Overwrite existing alias</span>
+              </label>
+
+              <button type="submit">Add mapping</button>
+            </form>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

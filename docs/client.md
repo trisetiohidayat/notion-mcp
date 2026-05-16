@@ -116,6 +116,14 @@ npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config refresh 
 npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config remove task_list --yes
 ```
 
+If you want a visual local workflow, run:
+
+```bash
+npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp ui
+```
+
+The UI listens on `http://127.0.0.1:3099` by default and only manages local mapping/config. It is separate from the stdio MCP server.
+
 Create:
 
 ```bash
