@@ -67,9 +67,10 @@ codex mcp add notion_db -- \
 If the user does not have `NOTION_API_TOKEN`, tell them to create a Notion internal integration:
 
 1. Open <https://www.notion.so/my-integrations>.
-2. Create a new internal integration.
+2. Create a new internal connection/integration.
 3. Copy the integration secret and set it as `NOTION_API_TOKEN`.
-4. Share or connect the target Notion database/page with that integration.
+4. In the connection settings, add the required pages/databases from the `Content access` tab. New connections may have no content access by default.
+5. Alternatively, open the target Notion database/page and use `Add connections`/`Connections` to connect that content to the integration.
 
 Do not assume the token can access every database. Notion only allows the integration to access pages/databases explicitly shared with it.
 

@@ -59,10 +59,10 @@ If `ntn login` succeeds but the MCP tool returns `Missing Notion token`, set `NO
 Use a Notion internal integration token when you choose explicit token auth.
 
 1. Open <https://www.notion.so/my-integrations>.
-2. Create a new internal integration.
+2. Create a new internal connection/integration.
 3. Copy the integration secret and use it as `NOTION_API_TOKEN`.
-4. Open the target Notion database/page.
-5. Share or connect that page/database with the integration.
+4. Open the connection settings and grant content access from the `Content access` tab. New connections may have no content access by default.
+5. Or open the target Notion database/page and use `Add connections`/`Connections` to connect that page/database to the integration.
 
 The token only works for pages/databases that are shared with the integration. If the MCP tool returns a Notion permission or object-not-found error, check that the integration has access to the database.
 
