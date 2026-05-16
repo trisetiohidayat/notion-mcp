@@ -1,174 +1,103 @@
-# MCP Server Installation
+# Local stdio Server
 
-This guide installs the Notion DB MCP server on the machine that will host the MCP server.
+This project is designed primarily for personal/local stdio MCP. In stdio mode, Codex or Claude Code starts the MCP server as a child process on the same machine.
 
-No workspace-specific IDs, tokens, or absolute private paths are required in the repository. Keep runtime config in ignored local files or environment variables.
+## No-Clone Server via `npx`
 
-## Requirements
-
-- Node.js 18+
-- npm
-- A Notion token source:
-  - `NOTION_API_TOKEN`, `NOTION_TOKEN`, or official `ntn` file-based auth
-- Optional for HTTPS publishing:
-  - Nginx or another reverse proxy
-  - TLS certificate manager such as Certbot
-
-## Install
+Codex:
 
 ```bash
-git clone <your-repo-url> notion-db-mcp
-cd notion-db-mcp
+codex mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+Claude Code:
+
+```bash
+claude mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+## Local Development from Checkout
+
+Use this when editing the MCP tools locally:
+
+```bash
+git clone https://github.com/trisetiohidayat/notion-mcp.git
+cd notion-mcp
 npm install
-cp config.example.json config.json
+npm run check
 ```
 
-Edit `config.json` for your Notion data sources. See [`configuration.md`](configuration.md).
-
-## Run as Local stdio MCP Server
-
-Use this when the MCP client runs on the same machine:
+Add the local checkout to Codex:
 
 ```bash
-./bin/notion-db-mcp.js
+codex mcp add notion_db_dev -- node /path/to/notion-mcp/bin/notion-mcp.js serve
 ```
 
-Register with Codex:
-
-```bash
-codex mcp add notion_db_precise -- /path/to/notion-db-mcp/bin/notion-db-mcp.js
-```
-
-If you use relative config files, set the MCP server working directory in your client config:
+Or configure manually:
 
 ```toml
-[mcp_servers.notion_db_precise]
-command = "/path/to/notion-db-mcp/bin/notion-db-mcp.js"
-cwd = "/path/to/notion-db-mcp"
+[mcp_servers.notion_db_dev]
+command = "node"
+args = ["/path/to/notion-mcp/bin/notion-mcp.js", "serve"]
+cwd = "/path/to/notion-mcp"
 ```
 
-## Run as Streamable HTTP MCP Server
+Restart the MCP client after code changes.
 
-Use this when remote MCP clients connect over HTTP(S).
+## Local Auth
 
-### Mode A: Server Holds Notion Auth
-
-The server uses `NOTION_API_TOKEN`, `NOTION_TOKEN`, or official `ntn` auth available on the server.
+Use one local auth source:
 
 ```bash
-export MCP_BEARER_TOKEN='<long-random-mcp-token>'
-export NOTION_API_TOKEN='<notion-token-available-on-server>'
-HOST=127.0.0.1 MCP_PORT=3088 ./bin/notion-db-mcp-http.js
+ntn login
 ```
 
-Clients send only:
-
-```text
-Authorization: Bearer <long-random-mcp-token>
-```
-
-### Mode B: Client Sends Notion Token Per Request
-
-Use this when the Notion token should stay with the client and the server is only a bridge.
+or:
 
 ```bash
-export MCP_BEARER_TOKEN='<long-random-mcp-token>'
-MCP_AUTH_MODE=dual_header HOST=127.0.0.1 MCP_PORT=3088 ./bin/notion-db-mcp-http.js
+export NOTION_API_TOKEN='<notion-token>'
 ```
 
-Clients send both:
+The server checks `NOTION_TOKEN`, `NOTION_API_TOKEN`, `NOTION_API_KEY`, `NOTION_ACCESS_TOKEN`, then `ntn` file-based auth.
 
-```text
-Authorization: Bearer <long-random-mcp-token>
-X-Notion-Token: <client-notion-token>
-```
+## Local Config
 
-This mode requires HTTPS or a private tunnel because the Notion token is sent over the network.
-
-## systemd Example
-
-Create a local env file outside git, for example:
+Create source aliases locally:
 
 ```bash
-cat > .mcp-env <<'EOF_ENV'
-MCP_BEARER_TOKEN=<long-random-mcp-token>
-MCP_AUTH_MODE=dual_header
-HOST=127.0.0.1
-MCP_PORT=3088
-EOF_ENV
-chmod 600 .mcp-env
-```
-
-Example unit:
-
-```ini
-[Unit]
-Description=Notion DB Precise HTTP MCP Server
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/path/to/notion-db-mcp
-EnvironmentFile=/path/to/notion-db-mcp/.mcp-env
-ExecStart=/path/to/notion-db-mcp/bin/notion-db-mcp-http.js
-Restart=always
-RestartSec=3
-NoNewPrivileges=true
-PrivateTmp=true
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable it:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now notion-db-mcp-http.service
-```
-
-## Nginx HTTPS Example
-
-Replace `mcp.example.com` with your domain:
-
-```nginx
-server {
-    listen 80;
-    server_name mcp.example.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:3088;
-        proxy_http_version 1.1;
-
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Authorization $http_authorization;
-        proxy_set_header X-Notion-Token $http_x_notion_token;
-
-        proxy_buffering off;
-        proxy_request_buffering off;
-        proxy_read_timeout 86400s;
-        proxy_send_timeout 86400s;
+mkdir -p ~/.config/notion-db-mcp
+cat > ~/.config/notion-db-mcp/config.json <<'JSON'
+{
+  "data_sources": {
+    "task_list": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "name": "Task List",
+      "key_property": "No",
+      "title_property": "Task",
+      "status_property": "Status"
     }
+  }
 }
+JSON
 ```
 
-Issue a certificate:
+Use `NOTION_DB_CONFIG` when you want a specific config file:
 
 ```bash
-sudo certbot --nginx -d mcp.example.com
+export NOTION_DB_CONFIG="$HOME/.config/notion-db-mcp/config.json"
 ```
 
-## Server Health Check
+## CLI Helper
+
+From a checkout:
 
 ```bash
-curl https://mcp.example.com/health
-```
-
-Expected response:
-
-```json
-{"ok":true,"name":"notion-db-precise-http"}
+./bin/db.js schema task_list
+./bin/db.js get task_list No 38
+./bin/db.js update task_list No 38 Status Done
+./bin/db.js update-props task_list No 38 Summary="Done: verified"
 ```

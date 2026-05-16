@@ -1,14 +1,13 @@
 # Notion DB MCP Helper
 
-Precise Notion data source tools for querying and updating Notion database rows by exact property filters. The lookup path is property-based and never relies on semantic search for row selection.
+Personal stdio MCP server and CLI helper for precise Notion data source queries/updates. It resolves rows by exact property filters and never relies on semantic search for mutation targets.
 
-This project provides:
+This project is optimized for local development and personal use:
 
-- A CLI helper for local scripts.
-- A stdio MCP server for local MCP clients.
-- A Streamable HTTP MCP server for remote MCP clients.
-- Generic source metadata so one installation can manage many Notion databases/tables.
-- A local all-in-one `npx` setup where MCP clients can start the server directly.
+- Codex or Claude Code starts the MCP server locally through stdio.
+- The server reads local Notion auth from env vars or official `ntn` file-based auth.
+- Database/source aliases live on the client machine.
+- `npx` can run the server from GitHub without cloning the repo.
 
 ## Why
 
@@ -19,18 +18,60 @@ Common Notion workflows like “update row 38” can become unreliable if an age
 3. Block not-found or duplicate matches.
 4. Update the exact `page_id` returned by the query.
 
+## Quick Start: Codex
+
+```bash
+codex mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+Authenticate Notion locally before starting Codex:
+
+```bash
+ntn login
+```
+
+or:
+
+```bash
+export NOTION_API_TOKEN='<notion-token>'
+codex
+```
+
+## Quick Start: Claude Code
+
+```bash
+claude mcp add notion_db -- \
+  npx --yes --package github:trisetiohidayat/notion-mcp \
+  notion-mcp serve
+```
+
+Authenticate Notion locally before starting Claude Code:
+
+```bash
+ntn login
+```
+
+or:
+
+```bash
+export NOTION_API_TOKEN='<notion-token>'
+claude
+```
+
 ## Quick Links
 
-- MCP server installation: [`docs/server.md`](docs/server.md)
 - MCP client installation: [`docs/client.md`](docs/client.md)
 - AI agent client installer guide: [`docs/ai-install-client.md`](docs/ai-install-client.md)
-- Configuration guide: [`docs/configuration.md`](docs/configuration.md)
+- Local configuration guide: [`docs/configuration.md`](docs/configuration.md)
+- Local development/server guide: [`docs/server.md`](docs/server.md)
 
 ## Tools
 
 ### Source Metadata Tools
 
-Use these when you configure named Notion sources in `config.json`.
+Use these when you configure named Notion sources in local `config.json`.
 
 - `notion_source_list`
 - `notion_source_schema`
@@ -48,6 +89,41 @@ Use these for raw `data_source_id` or simple aliases.
 - `notion_db_update_page`
 - `notion_db_update_by_property`
 
+## Local Config
+
+Create a client-side config file when you want aliases such as `task_list`:
+
+```bash
+mkdir -p ~/.config/notion-db-mcp
+cat > ~/.config/notion-db-mcp/config.json <<'JSON'
+{
+  "data_sources": {
+    "task_list": {
+      "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "name": "Task List",
+      "key_property": "No",
+      "title_property": "Task",
+      "status_property": "Status"
+    }
+  }
+}
+JSON
+```
+
+Because the MCP server runs locally in stdio mode, this file stays on the client machine.
+
+## Auth Model
+
+The helper reads Notion bearer tokens in this order:
+
+1. `NOTION_TOKEN`
+2. `NOTION_API_TOKEN`
+3. `NOTION_API_KEY`
+4. `NOTION_ACCESS_TOKEN`
+5. Official `ntn` file-based auth, when available
+
+If `ntn login` succeeds but the MCP tool returns `Missing Notion token`, set `NOTION_API_TOKEN` as a fallback.
+
 ## CLI Examples
 
 ```bash
@@ -60,39 +136,6 @@ export NOTION_API_TOKEN='<your-notion-token>'
 ./bin/db.js update example_tasks No 38 Status Done
 ./bin/db.js update-props example_tasks No 38 Summary="Done: verified"
 ```
-
-## Local MCP via `npx`
-
-Codex can start the stdio MCP server directly without cloning this repository manually:
-
-```bash
-codex mcp add notion_db -- \
-  npx --yes --package github:trisetiohidayat/notion-mcp \
-  notion-mcp serve
-```
-
-Claude Code can use the same local server command:
-
-```bash
-claude mcp add notion_db -- \
-  npx --yes --package github:trisetiohidayat/notion-mcp \
-  notion-mcp serve
-```
-
-## Auth Model
-
-The helper can read Notion bearer tokens from:
-
-1. `NOTION_TOKEN`
-2. `NOTION_API_TOKEN`
-3. `NOTION_API_KEY`
-4. `NOTION_ACCESS_TOKEN`
-5. Official `ntn` file-based auth, when available
-
-For remote MCP deployments, see [`docs/server.md`](docs/server.md) and [`docs/client.md`](docs/client.md). The recommended remote model is dual-header auth:
-
-- `Authorization: Bearer <mcp-access-token>` protects the MCP bridge.
-- `X-Notion-Token: <notion-token>` supplies the caller's Notion token per request.
 
 ## Safety Behavior
 

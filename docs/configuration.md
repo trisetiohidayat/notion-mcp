@@ -1,12 +1,21 @@
-# Configuration
+# Local Configuration
 
-Copy the example config and edit it for your own Notion workspace:
+Configuration is client-side. In the recommended stdio setup, the MCP server runs on the same machine as Codex or Claude Code and reads local config directly.
+
+## Config Location
+
+The server reads the first config file found in this order:
+
+1. `NOTION_DB_CONFIG`, if set
+2. `config.json` in the current working directory
+3. `~/.config/notion-db-mcp/config.json`
+
+Recommended personal location:
 
 ```bash
-cp config.example.json config.json
+mkdir -p ~/.config/notion-db-mcp
+$EDITOR ~/.config/notion-db-mcp/config.json
 ```
-
-`config.json` is intentionally ignored by git because it may contain workspace-specific IDs.
 
 ## Simple Aliases
 
@@ -56,6 +65,25 @@ With this metadata, source tools can be called with fewer arguments:
   "key_value": 38
 }
 ```
+
+## Adding a New Database
+
+1. Get the Notion `data_source_id`.
+2. Ensure your Notion auth has access to that database.
+3. Add a new entry in `~/.config/notion-db-mcp/config.json`.
+4. Restart the MCP client if the running server does not pick up the new file immediately.
+5. Verify with `notion_db_schema` or `notion_source_schema`.
+
+## Getting Content Access
+
+If using an internal integration token:
+
+1. Open <https://www.notion.so/my-integrations>.
+2. Open the connection/integration.
+3. Add pages/databases in the `Content access` tab.
+4. Or open the Notion database/page and use `Add connections`/`Connections`.
+
+New connections may have no content access by default.
 
 ## Resolving Notion IDs
 
