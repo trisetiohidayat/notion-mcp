@@ -189,10 +189,10 @@ export function registerNotionDbTools(server) {
   });
 
   server.registerTool('notion_db_query', {
-    description: 'Query a Notion data source using an explicit Notion API filter object. This is property-filter based, not semantic search.',
+    description: 'Query a Notion data source using an optional explicit Notion API filter object. This is property-filter based, not semantic search.',
     inputSchema: {
       data_source_id: z.string().describe('Data source ID or local alias from config.json'),
-      filters: jsonObject.describe('Notion API filter object'),
+      filters: jsonObject.optional().describe('Optional Notion API filter object'),
       sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
       page_size: pageSize,
       max_results: maxResults,

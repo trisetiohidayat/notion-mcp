@@ -5,8 +5,8 @@ import { queryDataSource } from '../src/notion.js';
 
 const registeredTools = [];
 registerNotionDbTools({
-  registerTool(name, config) {
-    registeredTools.push({ name, description: config.description });
+  registerTool(name, config, handler) {
+    registeredTools.push({ name, config, handler });
   },
 });
 
@@ -40,6 +40,8 @@ assert.deepEqual(
   [],
   'All expected MCP tools must be registered',
 );
+const rawQueryTool = registeredTools.find((tool) => tool.name === 'notion_db_query');
+assert.equal(rawQueryTool.config.inputSchema.filters.isOptional(), true, 'notion_db_query filters should be optional');
 
 const page = {
   id: 'page-1',
