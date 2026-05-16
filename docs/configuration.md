@@ -21,6 +21,25 @@ $EDITOR ~/.config/notion-db-mcp/config.json
 
 Use the built-in CLI for common mapping tasks:
 
+Optional global install for shorter commands:
+
+```bash
+npm install -g github:trisetiohidayat/notion-mcp
+```
+
+Then use:
+
+```bash
+notion-mcp config path
+notion-mcp config list
+notion-mcp config discover
+notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --title Task --status Status
+notion-mcp config refresh task_list
+notion-mcp config remove task_list --yes
+```
+
+Without global install, use `npx`:
+
 ```bash
 npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config path
 npx --yes --package github:trisetiohidayat/notion-mcp notion-mcp config list

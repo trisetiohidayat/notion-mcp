@@ -92,6 +92,20 @@ The token only works for pages/databases that are shared with the integration.
 
 Alias/source mapping belongs on the client machine because the server runs locally.
 
+For shorter commands, install the CLI globally from GitHub:
+
+```bash
+npm install -g github:trisetiohidayat/notion-mcp
+```
+
+Then use:
+
+```bash
+notion-mcp config list
+notion-mcp config discover
+notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --status Status
+```
+
 Use the CLI when possible:
 
 ```bash

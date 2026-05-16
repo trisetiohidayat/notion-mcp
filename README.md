@@ -112,6 +112,20 @@ JSON
 
 Because the MCP server runs locally in stdio mode, this file stays on the client machine.
 
+For shorter config commands, install the CLI globally from GitHub:
+
+```bash
+npm install -g github:trisetiohidayat/notion-mcp
+```
+
+Then use:
+
+```bash
+notion-mcp config list
+notion-mcp config discover
+notion-mcp config add task_list '<notion-database-url-or-data-source-id>' --key No --status Status
+```
+
 You can also manage this file with the built-in CLI:
 
 ```bash

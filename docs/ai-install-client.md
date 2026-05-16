@@ -50,6 +50,14 @@ The server checks `NOTION_TOKEN`, `NOTION_API_TOKEN`, `NOTION_API_KEY`, `NOTION_
 
 Tell the user to keep database aliases on the client machine:
 
+For short CLI commands, suggest optional global install:
+
+```bash
+npm install -g github:trisetiohidayat/notion-mcp
+```
+
+Then mapping commands can use `notion-mcp config ...` directly.
+
 Prefer the CLI for mapping changes:
 
 ```bash
