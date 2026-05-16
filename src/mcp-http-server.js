@@ -50,7 +50,7 @@ function createServer() {
 }
 
 const app = express();
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.get('/health', (_req, res) => res.json({ ok: true, name: 'notion-db-precise-http' }));
 
 app.post('/mcp', authorize, async (req, res) => {
