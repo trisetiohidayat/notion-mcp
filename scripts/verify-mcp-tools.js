@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { registerNotionDbTools } from '../src/register-tools.js';
 import { simplifyPropertyValue, tableRow } from '../src/properties.js';
+import { queryDataSource } from '../src/notion.js';
 
 const registeredTools = [];
 registerNotionDbTools({
@@ -82,4 +83,36 @@ assert.deepEqual(tableRow(page, ['No', 'Task', 'Status']), {
   },
 });
 
-console.log(`Verified ${registeredTools.length} MCP tools and scalar property conversion.`);
+const originalFetch = globalThis.fetch;
+const originalToken = process.env.NOTION_API_TOKEN;
+process.env.NOTION_API_TOKEN = 'secret_test';
+const requestedPageSizes = [];
+let requestCount = 0;
+globalThis.fetch = async (_url, options) => {
+  requestCount += 1;
+  const body = JSON.parse(options.body);
+  requestedPageSizes.push(body.page_size);
+  return {
+    ok: true,
+    async text() {
+      return JSON.stringify({
+        results: Array.from({ length: body.page_size }, (_, index) => ({ id: `page-${requestCount}-${index}` })),
+        has_more: requestCount < 3,
+        next_cursor: `cursor-${requestCount}`,
+      });
+    },
+  };
+};
+
+const limitedRows = await queryDataSource('ds1', { maxResults: 5, pageSize: 3 });
+assert.equal(limitedRows.length, 5);
+assert.deepEqual(requestedPageSizes, [3, 2]);
+
+globalThis.fetch = originalFetch;
+if (originalToken === undefined) {
+  delete process.env.NOTION_API_TOKEN;
+} else {
+  process.env.NOTION_API_TOKEN = originalToken;
+}
+
+console.log(`Verified ${registeredTools.length} MCP tools, scalar property conversion, and query result limiting.`);

@@ -112,7 +112,8 @@ Example:
   "source": "task_list",
   "property_name": "Status",
   "value": "QC",
-  "properties": ["No", "Task", "Status"]
+  "properties": ["No", "Task", "Status"],
+  "max_results": 50
 }
 ```
 

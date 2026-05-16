@@ -2,14 +2,21 @@ import { resolveDataSourceId } from './config.js';
 import { queryDataSource, retrieveDataSource, updatePage, NotionError } from './notion.js';
 import { buildExactFilter, buildProperties, getPropertySchema, pageTitle, simplifyPropertyValue, tableRow, summarizePage } from './properties.js';
 
-export async function notion_db_query(data_source_id, filters, sorts) {
-  return queryDataSource(data_source_id, { filter: filters, sorts });
+export async function notion_db_query(data_source_id, filters, sorts, options = {}) {
+  return queryDataSource(data_source_id, {
+    filter: filters,
+    sorts,
+    pageSize: options.page_size,
+    maxResults: options.max_results,
+  });
 }
 
-export async function notion_db_table(data_source_id, filters, sorts, properties) {
-  const pages = await notion_db_query(data_source_id, filters, sorts);
+export async function notion_db_table(data_source_id, filters, sorts, properties, options = {}) {
+  const pages = await notion_db_query(data_source_id, filters, sorts, options);
   return {
     count: pages.length,
+    limited: Boolean(options.max_results),
+    max_results: options.max_results,
     rows: pages.map((page) => tableRow(page, properties)),
   };
 }

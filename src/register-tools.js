@@ -12,6 +12,8 @@ import {
 } from './tools.js';
 
 const jsonObject = z.record(z.string(), z.any());
+const pageSize = z.number().int().min(1).max(100).optional().describe('Optional Notion API page size, 1-100');
+const maxResults = z.number().int().min(1).max(1000).optional().describe('Optional maximum rows to return, 1-1000');
 
 function textResult(value) {
   return {
@@ -95,9 +97,11 @@ export function registerNotionDbTools(server) {
       filters: jsonObject.optional().describe('Optional Notion API filter object'),
       sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
       properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+      page_size: pageSize,
+      max_results: maxResults,
     },
-  }, async ({ source, filters, sorts, properties }) => {
-    const result = await notion_db_table(resolveAlias(source), filters, sorts, properties);
+  }, async ({ source, filters, sorts, properties, page_size, max_results }) => {
+    const result = await notion_db_table(resolveAlias(source), filters, sorts, properties, { page_size, max_results });
     return textResult({ source, ...result });
   });
 
@@ -108,9 +112,11 @@ export function registerNotionDbTools(server) {
       filters: jsonObject.optional().describe('Optional Notion API filter object'),
       sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
       properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+      page_size: pageSize,
+      max_results: maxResults,
     },
-  }, async ({ source, filters, sorts, properties }) => {
-    const result = await notion_db_table(resolveAlias(source), filters, sorts, properties);
+  }, async ({ source, filters, sorts, properties, page_size, max_results }) => {
+    const result = await notion_db_table(resolveAlias(source), filters, sorts, properties, { page_size, max_results });
     return textResult({ source, ...result });
   });
 
@@ -145,12 +151,14 @@ export function registerNotionDbTools(server) {
       value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
       sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
       properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+      page_size: pageSize,
+      max_results: maxResults,
     },
-  }, async ({ source, property_name, value, sorts, properties }) => {
+  }, async ({ source, property_name, value, sorts, properties, page_size, max_results }) => {
     const dataSourceId = resolveAlias(source);
     const schema = await retrieveDataSource(dataSourceId);
     const filter = buildExactFilter(property_name, value, getPropertySchema(schema, property_name));
-    const result = await notion_db_table(dataSourceId, filter, sorts, properties);
+    const result = await notion_db_table(dataSourceId, filter, sorts, properties, { page_size, max_results });
     return textResult({ source, filter_property: property_name, filter_value: value, ...result });
   });
 
@@ -186,10 +194,12 @@ export function registerNotionDbTools(server) {
       data_source_id: z.string().describe('Data source ID or local alias from config.json'),
       filters: jsonObject.describe('Notion API filter object'),
       sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
+      page_size: pageSize,
+      max_results: maxResults,
     },
-  }, async ({ data_source_id, filters, sorts }) => {
-    const pages = await notion_db_query(resolveAlias(data_source_id), filters, sorts);
-    return textResult({ count: pages.length, pages: pages.map(summarizePage) });
+  }, async ({ data_source_id, filters, sorts, page_size, max_results }) => {
+    const pages = await notion_db_query(resolveAlias(data_source_id), filters, sorts, { page_size, max_results });
+    return textResult({ count: pages.length, limited: Boolean(max_results), max_results, pages: pages.map(summarizePage) });
   });
 
   server.registerTool('notion_db_table', {
@@ -199,9 +209,11 @@ export function registerNotionDbTools(server) {
       filters: jsonObject.optional().describe('Optional Notion API filter object'),
       sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
       properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+      page_size: pageSize,
+      max_results: maxResults,
     },
-  }, async ({ data_source_id, filters, sorts, properties }) => {
-    const result = await notion_db_table(resolveAlias(data_source_id), filters, sorts, properties);
+  }, async ({ data_source_id, filters, sorts, properties, page_size, max_results }) => {
+    const result = await notion_db_table(resolveAlias(data_source_id), filters, sorts, properties, { page_size, max_results });
     return textResult({ data_source_id: resolveAlias(data_source_id), ...result });
   });
 
@@ -236,12 +248,14 @@ export function registerNotionDbTools(server) {
       value: z.union([z.string(), z.number(), z.boolean()]).describe('Exact property value to match'),
       sorts: z.array(jsonObject).optional().describe('Optional Notion API sorts array'),
       properties: z.array(z.string()).optional().describe('Optional property names to include. When omitted, includes all properties.'),
+      page_size: pageSize,
+      max_results: maxResults,
     },
-  }, async ({ data_source_id, property_name, value, sorts, properties }) => {
+  }, async ({ data_source_id, property_name, value, sorts, properties, page_size, max_results }) => {
     const resolvedId = resolveAlias(data_source_id);
     const schema = await retrieveDataSource(resolvedId);
     const filter = buildExactFilter(property_name, value, getPropertySchema(schema, property_name));
-    const result = await notion_db_table(resolvedId, filter, sorts, properties);
+    const result = await notion_db_table(resolvedId, filter, sorts, properties, { page_size, max_results });
     return textResult({ data_source_id: resolvedId, filter_property: property_name, filter_value: value, ...result });
   });
 

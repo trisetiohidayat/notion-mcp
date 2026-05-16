@@ -99,11 +99,13 @@ export async function searchDataSources({ query, pageSize = 50 } = {}) {
   return results;
 }
 
-export async function queryDataSource(dataSourceId, { filter, sorts, pageSize = 100 } = {}) {
+export async function queryDataSource(dataSourceId, { filter, sorts, pageSize = 100, maxResults } = {}) {
   const results = [];
   let startCursor;
   do {
-    const body = { page_size: pageSize };
+    const remaining = maxResults ? Math.max(maxResults - results.length, 0) : pageSize;
+    if (maxResults && remaining === 0) break;
+    const body = { page_size: Math.min(pageSize, remaining || pageSize, 100) };
     if (filter) body.filter = filter;
     if (sorts) body.sorts = sorts;
     if (startCursor) body.start_cursor = startCursor;
@@ -113,7 +115,8 @@ export async function queryDataSource(dataSourceId, { filter, sorts, pageSize = 
     });
     results.push(...(page.results || []));
     startCursor = page.has_more ? page.next_cursor : undefined;
-  } while (startCursor);
+  } while (startCursor && (!maxResults || results.length < maxResults));
+  if (maxResults) return results.slice(0, maxResults);
   return results;
 }
 

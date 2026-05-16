@@ -143,9 +143,13 @@ List selected columns for exact property match:
   "source": "tasks",
   "property_name": "Status",
   "value": "QC",
-  "properties": ["No", "Task", "Status"]
+  "properties": ["No", "Task", "Status"],
+  "max_results": 50
 }
 ```
+
+Use `max_results` on table-style tools when you want a bounded sample or top-N
+answer instead of loading every matching page into the agent context.
 
 Group counts by one property:
 
